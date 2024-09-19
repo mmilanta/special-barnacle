@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Webpage</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+        function submit_request() {
+            recipe = {
+                "title": document.getElementById("ftitle").value,
+                "category": document.getElementById("fcategory").value,
+                "ingredients": document.getElementById("fingredients").value,
+                "steps": document.getElementById("fsteps").value,
+            }
+            console.log(recipe);
+
+            $.ajax({
+                url: '',    //Your api url
+                type: 'PUT',   //type is any HTTP method
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(recipe),      //Data as js object
+                success: function () {
+                    console.log("success");
+                    window.location.replace('./')
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <form action="" method="post">
+    <textarea  type="text" id="ftitle">{{ title }}</textarea >
+    <br/>
+    <textarea  type="text" id="fcategory">{{ category }}</textarea >
+    <h2>Ingredienti</h2>
+    <textarea  type="text" id="fingredients">{{ ingredients }}</textarea >
+    <h2>Ricetta</h2>
+    <textarea  type="text" id="fsteps">{{ steps }}</textarea >
+    <br/>
+    <button type="button" onclick="submit_request()">save</button>
+    <button type="button" onclick="window.location.replace('./')">discard</button>
+</form>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Webpage</title>    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+        function go_to_edit() {
+            window.location.href = window.location.href + "/edit";
+        }
+    </script>
+</head>
+<body>
+    <h1> {{ title }} </h1>
+    <p> {{ category }} </p>
+    <h2>Ingredienti</h2>
+    {{ ingredients|safe }}
+    <h2>Ricetta</h2>
+    <p> {{ steps|safe }} </p>
+    <button type="button" onclick="go_to_edit()">edit</button>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Webpage</title>
+</head>
+<body>
+    <ul id="categories">
+    {% for category in recipes_by_category %}
+        <li>
+            <p >{{ category }}</p>
+            <ul id="categories">
+                {% for recipe in recipes_by_category[category] %}
+                <li><a href="{{ url_for('recipe_page', recipe_id=recipe["id"]) }}">{{ recipe["title"] }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+    </ul>
+
+</body>
+</html>

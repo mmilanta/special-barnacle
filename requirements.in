@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+mypy
+pydantic
+pre-commit
+requests
+jinja2
+markdown

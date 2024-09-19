@@ -3,6 +3,9 @@ import logging
 from data import Recipe, RecipeRequest
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
+
 from markdown import markdown
 
 app = FastAPI()
@@ -35,6 +38,8 @@ def post_recipes_index(recipe_id: str, recipe: Recipe) -> Recipe:
 
 # UI
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.add_middleware(GZipMiddleware)
 
 templates = Jinja2Templates(directory="templates")
 

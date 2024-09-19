@@ -45,12 +45,13 @@ def index_page(request: Request):
     recipes_by_category = {}
     for recipe in recipes:
         recipes_by_category.setdefault(recipe.category, [])
-        recipes_by_category[recipe.category].append({
-            "title": recipe.title,
-            "id": recipe.id
-        })
+        recipes_by_category[recipe.category].append(
+            {"title": recipe.title, "id": recipe.id}
+        )
     return templates.TemplateResponse(
-        request=request, name="index.html", context={"recipes_by_category": recipes_by_category}
+        request=request,
+        name="index.html",
+        context={"recipes_by_category": recipes_by_category},
     )
 
 
@@ -60,13 +61,17 @@ def recipe_page(request: Request, recipe_id):
     recipe_dict = recipe.model_dump()
     recipe_dict["ingredients"] = markdown(recipe_dict["ingredients"])
     recipe_dict["steps"] = markdown(recipe_dict["steps"])
-    return templates.TemplateResponse(request=request, name="recipe.html", context=recipe_dict)
+    return templates.TemplateResponse(
+        request=request, name="recipe.html", context=recipe_dict
+    )
 
 
 @app.get("/recipe/{recipe_id}/edit", response_class=HTMLResponse)
 def recipe_edit_page(request: Request, recipe_id):
     recipe = Recipe.load(id=recipe_id)
-    return templates.TemplateResponse(request=request, name="recipe_edit.html", context=recipe.model_dump())
+    return templates.TemplateResponse(
+        request=request, name="recipe_edit.html", context=recipe.model_dump()
+    )
 
 
 @app.put("/recipe/{recipe_id}/edit")

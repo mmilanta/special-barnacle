@@ -28,7 +28,7 @@ class DBModel(BaseModel):
     @classmethod
     def all(cls):
         keys = [k for k in list_db() if k.startswith(cls.prefix)]
-        ids = [k[len(cls.prefix) + 1:] for k in keys]
+        ids = [k[len(cls.prefix) + 1 :] for k in keys]
         return [cls.load(id) for id in ids]
 
 
@@ -66,7 +66,7 @@ def list_db() -> list[str]:
     if request.status_code not in [200, 202]:
         raise GitStoreException()
     paths = json.loads(request.content)
-    keys = [path[: -5] for path in paths if path.endswith(".json")]
+    keys = [path[:-5] for path in paths if path.endswith(".json")]
     return keys
 
 

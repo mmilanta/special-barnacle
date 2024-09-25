@@ -32,7 +32,7 @@ class DBModel(BaseModel):
         return [cls.load(id) for id in ids]
 
 
-CACHE = {}
+CACHE: dict[str, dict] = {}
 
 
 def get_db(key: str) -> dict:

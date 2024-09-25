@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .markdown_li {
+        @apply ml-6 list-disc
+    }
+}

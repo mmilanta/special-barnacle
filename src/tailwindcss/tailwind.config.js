@@ -5,4 +5,8 @@ module.exports = {
         extend: {},
     },
     plugins: [],
+    safelist: [
+        'ml-6',
+        'list-disc',
+      ],
 };

@@ -83,7 +83,7 @@ def recipe_edit_page(request: Request, recipe_id):
 
 
 @app.put("/recipe/{recipe_id}/edit")
-def recipe_edit(recipe_id, recipe_request: RecipeRequest):
+def recipe_edit(recipe_id: str, recipe_request: RecipeRequest) -> Recipe:
     recipe = Recipe(
         id=recipe_id,
         title=recipe_request.title,

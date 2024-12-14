@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 import logging
 from data import Recipe, RecipeRequest, fetch_valid_categories
 from ui import format_markdown_html
@@ -31,10 +31,17 @@ def get_recipes_index() -> list[Recipe]:
     return recipes
 
 
-@app.patch("/api/recipe/{recipe_id}")
+@app.put("/api/recipe/{recipe_id}")
 def post_recipes_index(recipe_id: str, recipe: Recipe) -> Recipe:
+    if recipe.id != recipe_id:
+        raise HTTPException(status_code=422, detail="recipe id must match the url")
     recipe.save()
     return recipe
+
+
+@app.delete("/api/recipe/{recipe_id}", response_class=HTMLResponse)
+def delete_recipe(recipe_id: str):
+    Recipe.delete(id=recipe_id)
 
 
 # UI
@@ -54,6 +61,8 @@ def index_page(request: Request):
         recipes_by_category[recipe.category].append(
             {"title": recipe.title, "id": recipe.id}
         )
+    for category in recipes_by_category:
+        recipes_by_category[category].sort(key=lambda x: x["title"])
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -74,27 +83,9 @@ def recipe_page(request: Request, recipe_id):
     )
 
 
-@app.delete("/recipe/{recipe_id}", response_class=HTMLResponse)
-def delete_recipe(request: Request, recipe_id):
-    Recipe.delete(id=recipe_id)
-
-
 @app.get("/recipe/{recipe_id}/edit", response_class=HTMLResponse)
 def recipe_edit_page(request: Request, recipe_id):
     recipe = Recipe.load(id=recipe_id)
     return templates.TemplateResponse(
         request=request, name="recipe_edit.html", context={"recipe": recipe.model_dump(), "valid_categories": fetch_valid_categories()}
     )
-
-
-@app.put("/recipe/{recipe_id}/edit")
-def recipe_edit(recipe_id: str, recipe_request: RecipeRequest) -> Recipe:
-    recipe = Recipe(
-        id=recipe_id,
-        title=recipe_request.title,
-        category=recipe_request.category,
-        ingredients=recipe_request.ingredients,
-        steps=recipe_request.steps,
-    )
-    recipe.save()
-    return recipe

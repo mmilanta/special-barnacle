@@ -7,16 +7,18 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
         function submit_request() {
+            const idx = window.location.href.split('/').at(-2)
             recipe = {
+                "prefix": "recipe",
+                "id": idx,
                 "title": document.getElementById("ftitle").value,
                 "category": document.getElementById("fcategory").value,
                 "ingredients": document.getElementById("fingredients").value,
                 "steps": document.getElementById("fsteps").value,
             }
-            console.log(recipe);
 
             $.ajax({
-                url: '',    //Your api url
+                url: '/api/recipe/' + idx,   //Your api url
                 type: 'PUT',   //type is any HTTP method
                 contentType: "application/json; charset=utf-8",
                 data: JSON.stringify(recipe),      //Data as js object

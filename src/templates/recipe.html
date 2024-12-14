@@ -6,42 +6,42 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
       function go_to_edit() {
-          window.location.href = window.location.href + "/edit";
+        window.location.href = window.location.href + "/edit";
       }
       function delete_recipe() {
-          $.ajax({
-            url: '',    //Your api url
-            type: 'DELETE',   //type is any HTTP method
-            contentType: "application/json; charset=utf-8",
-            success: function () {
-                console.log("success");
-                window.location.replace('./../index')
-            }
-          });
+        const idx = window.location.href.split('/').at(-1)
+        $.ajax({
+          url: '/api/recipe/' + idx,    //Your api url
+          type: 'DELETE',   //type is any HTTP method
+          contentType: "application/json; charset=utf-8",
+          success: function () {
+              console.log("success");
+              window.location.replace('./../index')
+          }
+        });
       }
     </script>
 </head>
 <body>
-
-    <div class="bg-orange-50 min-h-screen">
-        <div class="container flex flex-col px-5 mx-auto xs:space-y-10 md:space-y-5 space-y-3">
-          <p class="xl:text-8xl mb-10 lg:text-7xl md:text-6xl sm:text-5xl text-4xl mt-10 font-serif"> {{ title }} </p>
-          <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ingredienti</p>
-          <p class="font-serif text-lg">{{ ingredients|safe }}</p>
-          <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ricetta</p>
-          <p class="font-serif text-lg">{{ steps|safe }}</p>
-          <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl" v-if="recipe_parsed.notes">Note</p>
-          <p class="font-serif text-lg">{{ notes|safe }}</p>     
-          <div class="flex flex-row">
-            <button class="bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="go_to_edit()" color="#63e2b7">
-              Edit
-            </button>      
-            <button class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="delete_recipe()" color="#63e2b7">
-              Delete
-            </button>
-          </div>
-        </div>
-        <div class="h-5"></div>
+  <div class="bg-orange-50 min-h-screen">
+    <div class="container flex flex-col px-5 mx-auto xs:space-y-10 md:space-y-5 space-y-3">
+      <p class="xl:text-8xl mb-10 lg:text-7xl md:text-6xl sm:text-5xl text-4xl mt-10 font-serif"> {{ title }} </p>
+      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ingredienti</p>
+      <p class="font-serif text-lg">{{ ingredients|safe }}</p>
+      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ricetta</p>
+      <p class="font-serif text-lg">{{ steps|safe }}</p>
+      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl" v-if="recipe_parsed.notes">Note</p>
+      <p class="font-serif text-lg">{{ notes|safe }}</p>     
+      <div class="flex flex-row">
+        <button class="bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="go_to_edit()" color="#63e2b7">
+          Edit
+        </button>      
+        <button class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="delete_recipe()" color="#63e2b7">
+          Delete
+        </button>
       </div>
+    </div>
+    <div class="h-5"></div>
+  </div>
 </body>
 </html>

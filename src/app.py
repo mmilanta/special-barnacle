@@ -44,6 +44,13 @@ def delete_recipe(recipe_id: str):
     Recipe.delete(id=recipe_id)
 
 
+@app.post("/api/recipe")
+def post_recipe() -> Recipe:
+    recipe = Recipe.new_empty()
+    recipe.save()
+    return recipe
+
+
 # UI
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

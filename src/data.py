@@ -5,6 +5,7 @@ import requests
 from typing import ClassVar
 import json
 from enum import Enum
+import uuid
 
 
 class DBModel(BaseModel):
@@ -102,3 +103,13 @@ class Recipe(DBModel):
     category: str
     ingredients: str
     steps: str
+
+    @classmethod
+    def new_empty(cls) -> "Recipe":
+        return Recipe(
+            id=str(uuid.uuid4()),
+            title="Titolo",
+            category="Categoria",
+            ingredients="",
+            steps="",
+        )

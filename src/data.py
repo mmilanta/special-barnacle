@@ -16,6 +16,11 @@ class DBModel(BaseModel):
         return cls.prefix + ":" + id
 
     @classmethod
+    def delete(cls, id: str) -> None:
+        key = cls.get_key(id=id)
+        delete_db(key)
+
+    @classmethod
     def load(cls, id: str):
         key = cls.get_key(id=id)
         model_dict = get_db(key)
@@ -55,7 +60,8 @@ def set_db(key: str, data: dict) -> None:
 
 
 def delete_db(key: str) -> None:
-    CACHE.pop(key)
+    if key in CACHE:
+        CACHE.pop(key)
     request = requests.delete(db_path(key))
     if request.status_code not in [200, 202]:
         raise GitStoreException()

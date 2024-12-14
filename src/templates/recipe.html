@@ -5,9 +5,20 @@
     <title>My Webpage</title>    
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
-        function go_to_edit() {
-            window.location.href = window.location.href + "/edit";
-        }
+      function go_to_edit() {
+          window.location.href = window.location.href + "/edit";
+      }
+      function delete_recipe() {
+          $.ajax({
+            url: '',    //Your api url
+            type: 'DELETE',   //type is any HTTP method
+            contentType: "application/json; charset=utf-8",
+            success: function () {
+                console.log("success");
+                window.location.replace('./../index')
+            }
+          });
+      }
     </script>
 </head>
 <body>
@@ -25,10 +36,9 @@
             <button class="bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="go_to_edit()" color="#63e2b7">
               Edit
             </button>      
-            <button class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 mr-4 rounded"  type="error" color="#63e2b7">
+            <button class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="delete_recipe()" color="#63e2b7">
               Delete
             </button>
-            <LoginComponent></LoginComponent>
           </div>
         </div>
         <div class="h-5"></div>

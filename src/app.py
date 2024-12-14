@@ -74,6 +74,11 @@ def recipe_page(request: Request, recipe_id):
     )
 
 
+@app.delete("/recipe/{recipe_id}", response_class=HTMLResponse)
+def delete_recipe(request: Request, recipe_id):
+    Recipe.delete(id=recipe_id)
+
+
 @app.get("/recipe/{recipe_id}/edit", response_class=HTMLResponse)
 def recipe_edit_page(request: Request, recipe_id):
     recipe = Recipe.load(id=recipe_id)

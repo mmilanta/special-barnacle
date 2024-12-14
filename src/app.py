@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 import logging
-from data import Recipe, RecipeRequest
+from data import Recipe, RecipeRequest, fetch_valid_categories
 from ui import format_markdown_html
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -57,7 +57,7 @@ def index_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"recipes_by_category": recipes_by_category},
+        context={"recipes_by_category": recipes_by_category, "valid_categories": fetch_valid_categories()},
     )
 
 
@@ -78,7 +78,7 @@ def recipe_page(request: Request, recipe_id):
 def recipe_edit_page(request: Request, recipe_id):
     recipe = Recipe.load(id=recipe_id)
     return templates.TemplateResponse(
-        request=request, name="recipe_edit.html", context=recipe.model_dump()
+        request=request, name="recipe_edit.html", context={"recipe": recipe.model_dump(), "valid_categories": fetch_valid_categories()}
     )
 
 

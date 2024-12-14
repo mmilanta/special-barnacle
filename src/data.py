@@ -70,6 +70,10 @@ def list_db() -> list[str]:
     return keys
 
 
+def fetch_valid_categories() -> dict[str, str]:
+    valid_categories = set(recipe.category for recipe in Recipe.all())
+    return {category: category.replace("_", " ").title() for category in valid_categories}
+
 class HTTPMethod(Enum):
     GET = "get"
     PUT = "put"

@@ -102,10 +102,3 @@ class Recipe(DBModel):
     category: str
     ingredients: str
     steps: str
-
-
-class RecipeRequest(BaseModel):
-    title: str
-    category: str
-    ingredients: str
-    steps: str

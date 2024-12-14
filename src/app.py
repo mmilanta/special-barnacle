@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 import logging
-from data import Recipe, RecipeRequest, fetch_valid_categories
+from data import Recipe, fetch_valid_categories
 from ui import format_markdown_html
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse

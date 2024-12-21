@@ -1,0 +1,23 @@
+services:
+  api:
+    image: ghcr.io/mmilanta/special-barnacle:main
+    command: >
+      sh -c "uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    environment:
+      - GIT_STORE_HOST=git-store
+      - GIT_STORE_PORT=5000
+  git-store:
+    # Image is only used locally, to avoid building all services individually
+    image: ghcr.io/mmilanta/git-store:main
+    command: >
+      sh -c "uvicorn app:app --host 0.0.0.0 --port 5000 --reload"
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

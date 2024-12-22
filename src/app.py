@@ -1,13 +1,12 @@
 from fastapi import FastAPI, Request, HTTPException
 import logging
 from data import Recipe, fetch_valid_categories
-from ui import format_markdown_html
+from ui import markdown_to_html
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 
-from markdown import markdown
 
 app = FastAPI()
 
@@ -81,10 +80,8 @@ def index_page(request: Request):
 def recipe_page(request: Request, recipe_id):
     recipe = Recipe.load(id=recipe_id)
     recipe_dict = recipe.model_dump()
-    recipe_dict["ingredients"] = format_markdown_html(
-        markdown(recipe_dict["ingredients"])
-    )
-    recipe_dict["steps"] = format_markdown_html(markdown(recipe_dict["steps"]))
+    recipe_dict["ingredients"] = markdown_to_html(recipe_dict["ingredients"])
+    recipe_dict["steps"] = markdown_to_html(recipe_dict["steps"])
     return templates.TemplateResponse(
         request=request, name="recipe.html", context=recipe_dict
     )

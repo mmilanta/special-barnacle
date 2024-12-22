@@ -5,4 +5,4 @@ pydantic
 pre-commit
 requests
 jinja2
-markdown
+mistune

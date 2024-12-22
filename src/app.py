@@ -53,6 +53,7 @@ def post_recipe() -> Recipe:
 # UI
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(GZipMiddleware)
 
 templates = Jinja2Templates(directory="templates")

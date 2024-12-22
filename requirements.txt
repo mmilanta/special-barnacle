@@ -8,14 +8,20 @@ annotated-types==0.7.0
     # via pydantic
 anyio==4.6.0
     # via starlette
+authlib==1.4.0
+    # via -r requirements.in
 certifi==2024.8.30
     # via requests
+cffi==1.17.1
+    # via cryptography
 cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via uvicorn
+cryptography==44.0.0
+    # via authlib
 distlib==0.3.8
     # via virtualenv
 fastapi==0.115.0
@@ -46,6 +52,8 @@ platformdirs==4.3.6
     # via virtualenv
 pre-commit==3.8.0
     # via -r requirements.in
+pycparser==2.22
+    # via cffi
 pydantic==2.9.2
     # via
     #   -r requirements.in

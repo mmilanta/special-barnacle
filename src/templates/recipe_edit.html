@@ -6,62 +6,114 @@
     <title>Edit Recipe</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
-        function submit_request() {
-            const idx = window.location.href.split('/').at(-2)
-            recipe = {
-                "prefix": "recipe",
-                "id": idx,
-                "title": document.getElementById("ftitle").value,
-                "category": document.getElementById("fcategory").value,
-                "ingredients": document.getElementById("fingredients").value,
-                "steps": document.getElementById("fsteps").value,
-            }
+      function submit_request() {
+          const idx = window.location.href.split('/').at(-2);
+          const recipe = {
+              "prefix": "recipe",
+              "id": idx,
+              "title": document.getElementById("ftitle").value,
+              "category": document.getElementById("fcategory").value,
+              "ingredients": document.getElementById("fingredients").value,
+              "steps": document.getElementById("fsteps").value,
+          };
 
-            $.ajax({
-                url: '/api/recipe/' + idx,   //Your api url
-                type: 'PUT',   //type is any HTTP method
-                contentType: "application/json; charset=utf-8",
-                data: JSON.stringify(recipe),      //Data as js object
-                success: function () {
-                    console.log("success");
-                    window.location.replace('./')
-                }
-            });
-        }
+          $.ajax({
+              url: '/api/recipe/' + idx, 
+              type: 'PUT',
+              contentType: "application/json; charset=utf-8",
+              data: JSON.stringify(recipe),
+              success: function () {
+                  console.log("success");
+                  window.location.replace('./');
+              }
+          });
+      }
+
+      // This function resizes a textarea to fit its content
+      function autoResizeTextarea(element) {
+          element.style.height = 'auto';
+          element.style.height = element.scrollHeight + 'px';
+      }
+
+      // Add an event listener to each target textarea on DOM load
+
+      document.addEventListener('DOMContentLoaded', function() {
+        // Grab the textareas you want to auto-resize
+        const textareas = ['ftitle', 'fingredients', 'fsteps']
+          .map(id => document.getElementById(id))
+          .filter(Boolean);
+  
+        // On input, auto-resize
+        textareas.forEach((ta) => {
+          ta.addEventListener('input', () => autoResizeTextarea(ta));
+          // Trigger an initial resize on load
+          autoResizeTextarea(ta);
+        });
+  
+        // Also, re-check sizes on window resize
+        window.addEventListener('resize', () => {
+          textareas.forEach((ta) => autoResizeTextarea(ta));
+        });
+      });
     </script>
 </head>
 
 <body>
-    <div class="bg-orange-50 min-h-screen">
-        <div class="container flex flex-col px-5 mx-auto xs:space-y-10 md:space-y-5 space-y-3">
-            <textarea
-                class="xl:text-8xl box-content lg:text-7xl md:text-6xl sm:text-5xl text-4xl font-mono bg-inherit focus:bg-inherit mt-10"
-                type="text" id="ftitle">{{ recipe["title"] }}</textarea>
-            <br/>
-            <select
-                class="font-mono border text-sm rounded-lg block w-full p-2.5 "
-                type="text" id="fcategory">
-                {% for category in valid_categories %}
-                <option value={{category}} {% if category == recipe["category"] %}selected{% endif %}>{{valid_categories[category]}}</option>
-                {% endfor %}
-            </select>
-            <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ingredienti</p>
-            <textarea class="h-fit font-mono text-lg bg-inherit focus:bg-inherit" type="text" id="fingredients">{{ recipe["ingredients"] }}</textarea>
-            <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ricetta</p>
-            <textarea class="font-mono text-lg bg-inherit focus:bg-inherit" type="text" id="fsteps">{{ recipe["steps"] }}</textarea>
-            <br />
-             
-            <div class="flex flex-row">
-                <button class="bg-green-500 hover:bg-green-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="submit_request()" color="#63e2b7">
-                    Save
-                </button>      
-                <button class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 mr-4 rounded"  type="error" onclick="window.location.replace('./')" color="#63e2b7">
-                    Discard
-                </button>
-            </div>
-        </div></div>
-    </div>
-    <div class="h-5"></div>
-</body>
+  <div class="bg-orange-50 min-h-screen">
+    <div class="container flex flex-col px-5 mx-auto xs:space-y-10 md:space-y-5 space-y-3">
 
+      <!-- Title -->
+      <textarea
+        id="ftitle"
+        rows="1"
+        class="xl:text-8xl lg:text-7xl md:text-6xl sm:text-5xl text-4xl font-mono bg-inherit focus:bg-inherit resize-none"
+      >{{ recipe["title"] }}</textarea>
+      
+      <!-- Category -->
+      <select
+        id="fcategory"
+        class="font-mono border text-sm rounded-lg block w-full p-2.5 "
+      >
+        {% for category in valid_categories %}
+          <option value="{{category}}" {% if category == recipe["category"] %}selected{% endif %}>
+            {{ valid_categories[category] }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <!-- Ingredients -->
+      <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ingredienti</p>
+      <textarea
+        id="fingredients"
+        class="font-mono text-lg bg-inherit focus:bg-inherit resize-none"
+        rows="1"
+      >{{ recipe["ingredients"] }}</textarea>
+
+      <!-- Steps -->
+      <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ricetta</p>
+      <textarea
+        id="fsteps"
+        class="font-mono text-lg bg-inherit focus:bg-inherit resize-none"
+        rows="1"
+      >{{ recipe["steps"] }}</textarea>
+
+      <br />
+      <div class="flex flex-row">
+        <button
+          class="bg-green-500 hover:bg-green-700 text-white py-2 px-4 mr-4 rounded"
+          onclick="submit_request()"
+        >
+          Save
+        </button>
+        <button
+          class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 mr-4 rounded"
+          onclick="window.location.replace('./')"
+        >
+          Discard
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="h-5"></div>
+</body>
 </html>

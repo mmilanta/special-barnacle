@@ -12,12 +12,12 @@
       function delete_recipe() {
         const idx = window.location.href.split('/').at(-1)
         $.ajax({
-          url: '/api/recipe/' + idx,    //Your api url
+          url: '/api/v1/recipe/' + idx,    //Your api url
           type: 'DELETE',   //type is any HTTP method
           contentType: "application/json; charset=utf-8",
           success: function () {
               console.log("success");
-              window.location.replace('./../index')
+              window.location.replace('./../')
           }
         });
       }

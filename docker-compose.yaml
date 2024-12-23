@@ -1,6 +1,6 @@
 services:
   api:
-    image: mmilanta/special-bernacle:latest
+    image: ghcr.io/mmilanta/special-barnacle:main
     build:
       context: .
       dockerfile: Dockerfile

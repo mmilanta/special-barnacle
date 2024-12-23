@@ -19,7 +19,7 @@
           };
 
           $.ajax({
-              url: '/api/recipe/' + idx, 
+              url: '/api/v1/recipe/' + idx, 
               type: 'PUT',
               contentType: "application/json; charset=utf-8",
               data: JSON.stringify(recipe),

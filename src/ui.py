@@ -50,6 +50,11 @@ def recipe_edit_page(request: Request, recipe_id):
     )
 
 
+@ui.exception_handler(404)
+def missing_page(request: Request, exc):
+    return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Page not found"})
+
+
 def markdown_to_html(text: str) -> str:
     mkd = mistune.html(text)
     return mkd.replace("<ul>", '<ul class="ml-6 list-disc">')

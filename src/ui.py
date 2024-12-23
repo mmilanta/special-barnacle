@@ -1,6 +1,6 @@
 import mistune
 from fastapi import FastAPI, Request
-from data import Recipe, fetch_valid_categories
+from data import Recipe, fetch_valid_categories, GitStoreException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 ui = FastAPI()
@@ -27,7 +27,10 @@ def index_page(request: Request):
 
 @ui.get("/recipe/{recipe_id}", response_class=HTMLResponse)
 def recipe_page(request: Request, recipe_id):
-    recipe = Recipe.load(id=recipe_id)
+    try:
+        recipe = Recipe.load(id=recipe_id)
+    except GitStoreException:
+        return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Recipe not found"})
     recipe_dict = recipe.model_dump()
     recipe_dict["ingredients"] = markdown_to_html(recipe_dict["ingredients"])
     recipe_dict["steps"] = markdown_to_html(recipe_dict["steps"])
@@ -38,7 +41,10 @@ def recipe_page(request: Request, recipe_id):
 
 @ui.get("/recipe/{recipe_id}/edit", response_class=HTMLResponse)
 def recipe_edit_page(request: Request, recipe_id):
-    recipe = Recipe.load(id=recipe_id)
+    try:
+        recipe = Recipe.load(id=recipe_id)
+    except GitStoreException:
+        return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Recipe not found"})
     return templates.TemplateResponse(
         request=request, name="recipe_edit.html", context={"recipe": recipe.model_dump(), "valid_categories": fetch_valid_categories()}
     )

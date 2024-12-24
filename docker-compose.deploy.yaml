@@ -4,7 +4,7 @@ services:
     command: >
       sh -c "uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
     ports:
-      - "8000:8000"
+      - "80:8000"
     environment:
       - GIT_STORE_HOST=git-store
       - GIT_STORE_PORT=5000

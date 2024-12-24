@@ -11,6 +11,9 @@ services:
     environment:
       - GIT_STORE_HOST=git-store
       - GIT_STORE_PORT=5000
+    
+    env_file:
+      - .env
     volumes:
       - ./src:/src
   git-store:

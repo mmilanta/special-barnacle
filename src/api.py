@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import HTMLResponse
-from data import Recipe
+from data import Recipe, fetch_superusers_email
+from oauth import get_current_user
 
 api = FastAPI()
 
@@ -17,9 +18,14 @@ def get_recipes_index() -> list[Recipe]:
 
 
 @api.put("/recipe/{recipe_id}")
-def post_recipes_index(recipe_id: str, recipe: Recipe) -> Recipe:
+def post_recipes_index(recipe_id: str, recipe: Recipe, user: dict = Depends(get_current_user)) -> Recipe:
+    print(f"user: {user}")
     if recipe.id != recipe_id:
-        raise HTTPException(status_code=422, detail="recipe id must match the url")
+        raise HTTPException(status_code=422, detail="Recipe id must match the url")
+    if user is None:
+        raise HTTPException(status_code=401, detail="User must be logged in to edit recipe")
+    if user["email"] not in fetch_superusers_email():
+        raise HTTPException(status_code=403, detail="User must be a superuser to edit recipe")
     recipe.save()
     return recipe
 

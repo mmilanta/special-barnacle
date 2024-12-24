@@ -81,10 +81,9 @@ def fetch_valid_categories() -> dict[str, str]:
     valid_categories = set(recipe.category for recipe in Recipe.all())
     return {category: category.replace("_", " ").title() for category in valid_categories}
 
-class HTTPMethod(Enum):
-    GET = "get"
-    PUT = "put"
-    DELETE = "delete"
+def fetch_superusers_email() -> list[str]:
+    request = requests.get(db_path("superusers"))
+    return json.loads(request.content)
 
 
 def db_path(key: str = "", extension: str = ".json") -> str:
@@ -113,3 +112,10 @@ class Recipe(DBModel):
             ingredients="",
             steps="",
         )
+
+
+class User(DBModel):
+    prefix: ClassVar[Literal["user"]] = "user"
+    name: str
+    email: str
+    is_superuser: bool

@@ -26,6 +26,10 @@
               success: function () {
                   console.log("success");
                   window.location.replace('./');
+              },
+              error: function (xhr, status, error) {
+                const message = encodeURIComponent(xhr.responseJSON.detail); // Encode message for safe URL usage
+                window.location.replace(`/error?status=${xhr.status}&message=${message}`);
               }
           });
       }
@@ -100,16 +104,10 @@
 
       <br />
       <div class="flex flex-row">
-        <button
-          class="bg-green-500 hover:bg-green-700 text-white py-2 px-4 mr-4 rounded"
-          onclick="submit_request()"
-        >
+        <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-yellow-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="submit_request()">
           Save
         </button>
-        <button
-          class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 mr-4 rounded"
-          onclick="window.location.replace('./')"
-        >
+        <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-red-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="window.location.replace('./')">
           Discard
         </button>
       </div>

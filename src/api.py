@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from data import Recipe, fetch_superusers_email
 from oauth import get_current_user
+from uuid import uuid4, UUID
 
 api = FastAPI()
 
@@ -28,6 +29,11 @@ def post_recipes_index(recipe_id: str, recipe: Recipe, user: dict | None = Depen
 def delete_recipe(recipe_id: str, user: dict | None = Depends(get_current_user)):
     validate_user(user, superuser=True)
     Recipe.delete(id=recipe_id)
+
+
+@api.get("/uuid")
+def get_uuid() -> UUID:
+    return uuid4()
 
 
 def validate_user(user: dict, superuser: bool = False):

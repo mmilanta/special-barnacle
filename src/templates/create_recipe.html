@@ -7,8 +7,30 @@
     <title>Create Recipe {{ title }}</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
+        function fetchUUID() {
+            const xhr = new XMLHttpRequest();
+            let result = null;
+        
+            try {
+                xhr.open('GET', 'api/v1/uuid', false); // `false` makes the request synchronous
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send();
+        
+                if (xhr.status === 200) {
+                    result = JSON.parse(xhr.responseText); // Parse the UUID from the response
+                    console.log('UUID:', result);
+                } else {
+                    console.error('Error fetching UUID:', xhr.status, xhr.statusText);
+                }
+            } catch (error) {
+                console.error('Request failed:', error);
+            }
+        
+            return result;
+        }
+        
         function submit_request() {
-            const uuid = self.crypto.randomUUID();
+            const uuid = fetchUUID();
             title = document.getElementById("ftitle").value
             category = document.getElementById("fcategory").value
             ingredients = document.getElementById("fingredients").value

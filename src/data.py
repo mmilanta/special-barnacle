@@ -4,7 +4,6 @@ from typing import Literal
 import requests
 from typing import ClassVar
 import json
-from enum import Enum
 import uuid
 
 
@@ -81,9 +80,12 @@ def fetch_valid_categories() -> dict[str, str]:
     valid_categories = set(recipe.category for recipe in Recipe.all())
     return {category: category.replace("_", " ").title() for category in valid_categories}
 
+
 def fetch_superusers_email() -> list[str]:
-    request = requests.get(db_path("superusers"))
-    return json.loads(request.content)
+    if "superusers" not in CACHE:
+        request = requests.get(db_path("superusers"))
+        CACHE["superusers"] = json.loads(request.content)
+    return CACHE["superusers"]
 
 
 def db_path(key: str = "", extension: str = ".json") -> str:

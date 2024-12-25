@@ -26,7 +26,7 @@ def index_page(request: Request, user: dict | None = Depends(get_current_user)):
         context={
             "recipes_by_category": recipes_by_category,
             "valid_categories": fetch_valid_categories(),
-            "username": user["name"] if user else None
+            "user": user
         },
     )
 
@@ -40,7 +40,7 @@ def recipe_page(request: Request, recipe_id, user: dict | None = Depends(get_cur
     recipe_dict = recipe.model_dump()
     recipe_dict["ingredients"] = markdown_to_html(recipe_dict["ingredients"])
     recipe_dict["steps"] = markdown_to_html(recipe_dict["steps"])
-    recipe_dict["username"] = user["name"] if user else None
+    recipe_dict["user"] = user
     print(f"user: {user}")
     return templates.TemplateResponse(
         request=request, name="recipe.html", context=recipe_dict

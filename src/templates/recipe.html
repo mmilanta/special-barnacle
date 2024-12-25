@@ -34,18 +34,20 @@
       <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl" v-if="recipe_parsed.notes">Note</p>
       <div class="font-serif text-lg">{{ notes|safe }}</div>     
       <div class="flex flex-row">
-      {% if username %}
+      {% if user %}
+      {% if user["is_superuser"] %}
       <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-yellow-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="go_to_edit()">
         Edit
       </button>      
       <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-red-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="delete_recipe()">
         Delete
       </button>
+      {% endif %}
       <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-blue-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="location.href = '/auth/logout';">
         Logout
       </button>
       <p class="sm:text-lg md:text-xl lg:text-2xl py-2 px-4 mx-2 font-serif rounded w-fit">
-        {{username}}
+        {{user["name"]}}
       </p>
     {% else %}
       <!-- Show 'Login' button when the user is not logged in -->

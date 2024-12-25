@@ -10,17 +10,24 @@
         window.location.href = window.location.href + "/edit";
       }
       function delete_recipe() {
+        const confirmed = window.confirm("Sei sicuro di voler cancellare la ricetta? Questa operazione è (quasi) irreversibile.");
+          
+        if (confirmed) {
         const idx = window.location.href.split('/').at(-1)
-        $.ajax({
-          url: '/api/v1/recipe/' + idx,    //Your api url
-          type: 'DELETE',   //type is any HTTP method
-          contentType: "application/json; charset=utf-8",
-          success: function () {
-              console.log("success");
-              window.location.replace('./../')
-          }
-        });
-      }
+          $.ajax({
+            url: '/api/v1/recipe/' + idx,    //Your api url
+            type: 'DELETE',   //type is any HTTP method
+            contentType: "application/json; charset=utf-8",
+            success: function () {
+                console.log("success");
+                window.location.replace('./../')
+            }
+          });
+        } else {
+            // Log or handle the case where the user cancels
+            console.log("Deletion canceled by the user.");
+        }
+    }
     </script>
 </head>
 <body>

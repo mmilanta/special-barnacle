@@ -16,6 +16,7 @@
               "category": document.getElementById("fcategory").value,
               "ingredients": document.getElementById("fingredients").value,
               "steps": document.getElementById("fsteps").value,
+              "notes": document.getElementById("fnotes").value
           };
 
           $.ajax({
@@ -44,7 +45,7 @@
 
       document.addEventListener('DOMContentLoaded', function() {
         // Grab the textareas you want to auto-resize
-        const textareas = ['ftitle', 'fingredients', 'fsteps']
+        const textareas = ['ftitle', 'fingredients', 'fsteps', 'fnotes']
           .map(id => document.getElementById(id))
           .filter(Boolean);
   
@@ -101,6 +102,14 @@
         class="font-mono text-lg bg-inherit focus:bg-inherit resize-none"
         rows="1"
       >{{ recipe["steps"] }}</textarea>
+
+      <!-- Notes -->
+      <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Note</p>
+      <textarea
+        id="fnotes"
+        class="font-mono text-lg bg-inherit focus:bg-inherit resize-none"
+        rows="1"
+      >{{ recipe["notes"] }}</textarea>
 
       <br />
       <div class="flex flex-row">

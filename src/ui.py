@@ -38,8 +38,9 @@ def recipe_page(request: Request, recipe_id, user: dict | None = Depends(get_cur
     except GitStoreException:
         return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Recipe not found"})
     recipe_dict = recipe.model_dump()
-    recipe_dict["ingredients"] = markdown_to_html(recipe_dict["ingredients"])
-    recipe_dict["steps"] = markdown_to_html(recipe_dict["steps"])
+    recipe_dict["ingredients"] = markdown_to_html(recipe.ingredients)
+    recipe_dict["steps"] = markdown_to_html(recipe.steps)
+    recipe_dict["notes"] = markdown_to_html(recipe.notes)
     recipe_dict["user"] = user
     print(f"user: {user}")
     return templates.TemplateResponse(

@@ -104,6 +104,7 @@ class Recipe(DBModel):
     category: str
     ingredients: str
     steps: str
+    notes: str | None
 
     @classmethod
     def new_empty(cls) -> "Recipe":

@@ -33,7 +33,7 @@
             {% for category in recipes_by_category %}
           <div class="container flex flex-col px-5 mx-auto space-y-0">
             <div class="container  xl:space-y-5 md:space-y-2 space-y-1">
-              <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">{{valid_categories[category]}}</p>
+              <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">{{category}}</p>
               <div class="container px-5 xl:space-y-2 md:space-y-1 ">
 
                 {% for recipe in recipes_by_category[category] %}

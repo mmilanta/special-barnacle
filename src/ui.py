@@ -4,6 +4,8 @@ from data import Recipe, fetch_valid_categories, GitStoreException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from oauth import get_current_user
+import logging
+logger = logging.getLogger(__name__)
 
 ui = FastAPI()
 
@@ -12,9 +14,14 @@ templates = Jinja2Templates(directory="templates")
 @ui.get("/", response_class=HTMLResponse)
 def index_page(request: Request, user: dict | None = Depends(get_current_user)):
     recipes = Recipe.all()
-    recipes_by_category: dict[str, list[dict[str, str]]] = {}
+    recipes_by_category: dict[str, list[dict[str, str]]] = {
+        category: [] for category in
+        fetch_valid_categories()
+    }
     for recipe in recipes:
-        recipes_by_category.setdefault(recipe.category, [])
+        if recipe.category not in recipes_by_category:
+            logger.error(f"Category {recipe.category} not found in valid categories")
+            recipes_by_category[recipe.category] = []
         recipes_by_category[recipe.category].append(
             {"title": recipe.title, "id": recipe.id}
         )

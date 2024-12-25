@@ -92,7 +92,7 @@
       >
         {% for category in valid_categories %}
           <option value="{{category}}">
-            {{ valid_categories[category] }}
+            {{ category }}
           </option>
           {% endfor %}
           <option value="select_category" selected>Seleziona una categoria
@@ -128,7 +128,7 @@
 
       <br />
       <div class="flex flex-row">
-        <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-emerald-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="submit_request()">
+        <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-green-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="submit_request()">
           Crea
         </button>
         <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-red-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="window.location.replace('./')">

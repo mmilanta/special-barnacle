@@ -82,7 +82,7 @@
       >
         {% for category in valid_categories %}
           <option value="{{category}}" {% if category == recipe["category"] %}selected{% endif %}>
-            {{ valid_categories[category] }}
+            {{ category }}
           </option>
         {% endfor %}
       </select>

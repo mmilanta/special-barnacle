@@ -59,6 +59,15 @@ def recipe_edit_page(request: Request, recipe_id):
     )
 
 
+@ui.get("/create-recipe", response_class=HTMLResponse)
+def create_recipe_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="create_recipe.html",
+        context={"valid_categories": fetch_valid_categories()},
+    )
+
+
 @ui.get("/error", response_class=HTMLResponse)
 def error_page(request: Request, status: int, message: str):
     return templates.TemplateResponse(request=request, name="error.html", context={"status_code": str(status), "message": message})

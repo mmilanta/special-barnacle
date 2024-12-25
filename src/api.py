@@ -30,12 +30,6 @@ def delete_recipe(recipe_id: str, user: dict | None = Depends(get_current_user))
     Recipe.delete(id=recipe_id)
 
 
-@api.post("/recipe")
-def post_recipe() -> Recipe:
-    recipe = Recipe.new_empty()
-    recipe.save()
-    return recipe
-
 def validate_user(user: dict, superuser: bool = False):
     if user is None:
         raise HTTPException(status_code=401, detail="User must be logged in to edit recipe")

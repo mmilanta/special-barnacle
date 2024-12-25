@@ -106,15 +106,6 @@ class Recipe(DBModel):
     steps: str
     notes: str | None
 
-    @classmethod
-    def new_empty(cls) -> "Recipe":
-        return Recipe(
-            id=str(uuid.uuid4()),
-            title="Titolo",
-            category="Categoria",
-            ingredients="",
-            steps="",
-        )
 
 
 class User(DBModel):

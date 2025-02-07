@@ -1,10 +1,8 @@
 from pydantic import BaseModel
-import os
 from typing import Literal
-import requests
 from typing import ClassVar
 import json
-import uuid
+from db import get_data, set_data, delete_data, list_data
 
 
 class DBModel(BaseModel):
@@ -16,84 +14,75 @@ class DBModel(BaseModel):
         return cls.prefix + ":" + id
 
     @classmethod
-    def delete(cls, id: str) -> None:
+    async def delete(cls, id: str) -> None:
         key = cls.get_key(id=id)
-        delete_db(key)
+        await delete_db(db_path(key))
 
     @classmethod
-    def load(cls, id: str):
+    async def load(cls, id: str):
         key = cls.get_key(id=id)
-        model_dict = get_db(key)
+        model_dict = await get_db(db_path(key))
         return cls(**model_dict, id=id)
 
-    def save(self):
+    async def save(self):
         key = self.get_key(id=self.id)
-        set_db(key, self.model_dump(exclude={"prefix", "id"}))
+        await set_db(db_path(key), self.model_dump(exclude={"prefix", "id"}))
 
     @classmethod
-    def all(cls):
-        keys = [k for k in list_db() if k.startswith(cls.prefix)]
+    async def all(cls):
+        keys = [k for k in await list_db() if k.startswith(cls.prefix)]
         ids = [k[len(cls.prefix) + 1 :] for k in keys]
-        return [cls.load(id) for id in ids]
+        return [await cls.load(id) for id in ids]
 
 
 CACHE: dict[str, dict] = {}
 
 
-def get_db(key: str) -> dict:
+async def get_db(key: str) -> dict:
     if key in CACHE:
         return CACHE[key]
-    request = requests.get(db_path(key))
-    if request.status_code not in [200, 202]:
-        raise GitStoreException()
-    CACHE[key] = json.loads(request.content)
+    data = await get_data(key)
+    CACHE[key] = json.loads(data)
     return CACHE[key]
 
 
-def set_db(key: str, data: dict) -> None:
+async def set_db(key: str, data: dict) -> None:
     if key in CACHE:
         CACHE.pop(key)
     data_json = json.dumps(data, indent=4).encode("utf-8")
-    request = requests.put(db_path(key), data=data_json)
-    if request.status_code not in [200, 202]:
-        raise GitStoreException()
+    await set_data(key, data_json)
 
-
-def delete_db(key: str) -> None:
+async def delete_db(key: str) -> None:
     if key in CACHE:
         CACHE.pop(key)
-    request = requests.delete(db_path(key))
-    if request.status_code not in [200, 202]:
-        raise GitStoreException()
+    
+    await delete_data(key)
 
 
-def list_db() -> list[str]:
-    request = requests.get(db_path())
-    if request.status_code not in [200, 202]:
-        raise GitStoreException()
-    paths = json.loads(request.content)
+async def list_db() -> list[str]:
+    paths = await list_data()
     keys = [path[:-5] for path in paths if path.endswith(".json")]
     return keys
 
 
-def fetch_valid_categories() -> list[str]:
+async def fetch_valid_categories() -> list[str]:
     if "valid_categories" not in CACHE:
-        request = requests.get(db_path("valid_categories"))
-        CACHE["valid_categories"] = json.loads(request.content)
+        data = await get_data(db_path("valid_categories"))
+        CACHE["valid_categories"] = json.loads(data)
     return CACHE["valid_categories"]
 
 
-def fetch_superusers_email() -> list[str]:
+async def fetch_superusers_email() -> list[str]:
     if "superusers" not in CACHE:
-        request = requests.get(db_path("superusers"))
-        CACHE["superusers"] = json.loads(request.content)
+        data = await get_data(db_path("superusers"))
+        CACHE["superusers"] = json.loads(data)
     return CACHE["superusers"]
 
 
 def db_path(key: str = "", extension: str = ".json") -> str:
     if key:
         key += extension
-    return f"http://{os.environ['GIT_STORE_HOST']}:{os.environ['GIT_STORE_PORT']}/{key}"
+    return key
 
 
 class GitStoreException(Exception):

@@ -16,12 +16,3 @@ services:
       - .env
     volumes:
       - ./src:/src
-  git-store:
-    # Image is only used locally, to avoid building all services individually
-    image: ghcr.io/mmilanta/git-store:main
-    command: >
-      sh -c "uvicorn app:app --host 0.0.0.0 --port 5000 --reload"
-    ports:
-      - "5000:5000"
-    env_file:
-      - .env-git-store

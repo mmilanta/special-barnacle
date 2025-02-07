@@ -30,7 +30,7 @@ async def login(request: Request):
 async def auth(request: Request):
     token = await oauth.google.authorize_access_token(request)
     user = token.get('userinfo')  # Contains user information
-    user["is_superuser"] = user["email"] in fetch_superusers_email()
+    user["is_superuser"] = user["email"] in await fetch_superusers_email()
     if user:
         request.session['user'] = user
     return RedirectResponse(url="/")

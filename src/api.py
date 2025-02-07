@@ -7,32 +7,32 @@ from uuid import uuid4, UUID
 api = FastAPI()
 
 @api.get("/recipe/{recipe_id}")
-def get_recipe(recipe_id: str) -> Recipe:
-    recipe = Recipe.load(id=recipe_id)
+async def get_recipe(recipe_id: str) -> Recipe:
+    recipe = await Recipe.load(id=recipe_id)
     return recipe
 
 
 @api.get("/recipe")
-def get_recipes_index() -> list[Recipe]:
-    recipes = Recipe.all()
+async def get_recipes_index() -> list[Recipe]:
+    recipes = await Recipe.all()
     return recipes
 
 
 @api.put("/recipe/{recipe_id}")
-def post_recipes_index(recipe_id: str, recipe: Recipe, user: dict | None = Depends(get_current_user)) -> Recipe:
+async def post_recipes_index(recipe_id: str, recipe: Recipe, user: dict | None = Depends(get_current_user)) -> Recipe:
     validate_user(user, superuser=True)
-    recipe.save()
+    await recipe.save()
     return recipe
 
 
 @api.delete("/recipe/{recipe_id}", response_class=HTMLResponse)
-def delete_recipe(recipe_id: str, user: dict | None = Depends(get_current_user)):
+async def delete_recipe(recipe_id: str, user: dict | None = Depends(get_current_user)):
     validate_user(user, superuser=True)
-    Recipe.delete(id=recipe_id)
+    await Recipe.delete(id=recipe_id)
 
 
 @api.get("/uuid")
-def get_uuid() -> UUID:
+async def get_uuid() -> UUID:
     return uuid4()
 
 

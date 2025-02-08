@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-<link href="{{url_for('static',path='/css/app.css')}}" rel="stylesheet" />
-<link rel="shortcut icon" href="{{ url_for('static', path='./favicon.svg') }}">
+<link href="{{url_for('static',path='/css/app.css', _scheme='https')}}" rel="stylesheet" />
+<link rel="shortcut icon" href="{{ url_for('static', path='./favicon.svg', _scheme='https') }}">
 
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -39,7 +39,7 @@
 
                 {% for recipe in recipes_by_category[category] %}
                 <div>
-                  <p onclick="location.href = '{{ url_for('recipe_page', recipe_id=recipe['id']) }}'" class="font-serif text-md hover:underline sm:text-lg md:text-xl lg:text-2xl">{{ recipe.title }}</p>
+                  <p onclick="location.href = '{{ url_for('recipe_page', recipe_id=recipe['id'], _scheme='https') }}'" class="font-serif text-md hover:underline sm:text-lg md:text-xl lg:text-2xl">{{ recipe.title }}</p>
                 </div>
                 {% endfor %}
               </div>

@@ -11,4 +11,4 @@ RUN pip install .
 
 COPY src ${APP_DIR}
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]

@@ -5,9 +5,9 @@ services:
       context: .
       dockerfile: Dockerfile
     command: >
-      sh -c "uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "uvicorn app:app --host 0.0.0.0 --port 8080 --reload"
     ports:
-      - "8000:8000"
+      - "8080:8080"
     environment:
       - GIT_STORE_HOST=git-store
       - GIT_STORE_PORT=5000

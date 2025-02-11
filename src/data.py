@@ -85,10 +85,6 @@ def db_path(key: str = "", extension: str = ".json") -> str:
     return key
 
 
-class GitStoreException(Exception):
-    pass
-
-
 class Recipe(DBModel):
     prefix: ClassVar[Literal["recipe"]] = "recipe"
     title: str

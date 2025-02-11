@@ -1,6 +1,6 @@
 import mistune
 from fastapi import FastAPI, Request, Depends
-from data import Recipe, fetch_valid_categories, GitStoreException
+from data import Recipe, fetch_valid_categories
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from oauth import get_current_user
@@ -42,7 +42,7 @@ async def index_page(request: Request, user: dict | None = Depends(get_current_u
 async def recipe_page(request: Request, recipe_id, user: dict | None = Depends(get_current_user)):
     try:
         recipe = await Recipe.load(id=recipe_id)
-    except GitStoreException:
+    except FileNotFoundError:
         return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Recipe not found"})
     recipe_dict = recipe.model_dump()
     recipe_dict["ingredients"] = markdown_to_html(recipe.ingredients)

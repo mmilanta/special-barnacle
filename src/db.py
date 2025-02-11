@@ -98,8 +98,25 @@ def commit(file_path: str | None, commit_message: str):
 def push():
     try:
         origin = repo.remote(name='origin')
+        logger.info("pushing to remote")
+        try:
+            # Enable Git protocol debugging
+            os.environ['GIT_TRACE'] = '1'
+            os.environ['GIT_CURL_VERBOSE'] = '1'
+            
+            # Try push with detailed logging
+            result = repo.git.push('--verbose', '--porcelain')
+            logger.info(f"Push command output: {result}")
+        except Exception as e:
+            logger.error(f"Push failed with error type: {type(e)}")
+            logger.error(f"Push error: {str(e)}")
+            
+            # Try to get more info about the remote
+            try:
+                remote_info = repo.git.remote('show', 'origin')
+                logger.info(f"Remote info: {remote_info}")
+            except Exception as re:
+                logger.error(f"Failed to get remote info: {str(re)}")
     except ValueError:
         logger.info("Skipping due to missing remote origin")
         return
-    logger.info("pushing to remote")
-    origin.push()

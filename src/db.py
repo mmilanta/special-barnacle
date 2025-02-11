@@ -5,7 +5,7 @@ import shutil
 import aiofiles
 import asyncio
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn")
 data_folder = os.environ["LOCAL_REPO_FOLDER"]
 
 PUSH_DUE: bool = False
@@ -22,7 +22,8 @@ async def push_loop():
             PUSH_DUE = False
         else:
             logger.info("skipping PUSH")
-
+logger.info("starting push loop")
+logger.info(f"push every {os.environ} seconds")
 
 if asyncio.get_event_loop().is_running():
     asyncio.create_task(push_loop())

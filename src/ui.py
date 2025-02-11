@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from oauth import get_current_user
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn")
 
 ui = FastAPI()
 templates = Jinja2Templates(directory="templates")

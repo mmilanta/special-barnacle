@@ -31,8 +31,14 @@ if os.environ.get("SKIP_REMOTE_CONNECTION", False):
     repo = Repo.init(os.environ["LOCAL_REPO_FOLDER"])
     logger.info("init repo")
 else:
-    logger.info("cloning repo: " + os.environ["REPO_URL"])
-    repo = Repo.clone_from(os.environ["REPO_URL"], os.environ["LOCAL_REPO_FOLDER"])
+    repu_url = os.environ["REPO_URL"]
+    if "${REPO}" in repu_url:
+        repu_url = repu_url.replace("${REPO}", os.environ["REPO"])
+    if "${GITHUB_PAT}" in repu_url:
+        repu_url = repu_url.replace("${GITHUB_PAT}", os.environ["GITHUB_PAT"])
+    logger.info("cloning repo: " + repu_url)
+
+    repo = Repo.clone_from(repu_url, os.environ["LOCAL_REPO_FOLDER"])
 
 logger.info("setting username and email")
 repo.config_writer().set_value("user", "name", os.environ["USER_NAME"]).release()

@@ -22,8 +22,6 @@ async def push_loop():
             PUSH_DUE = False
         else:
             logger.info("skipping PUSH")
-logger.info("starting push loop")
-logger.info(f"push every {os.environ} seconds")
 
 if asyncio.get_event_loop().is_running():
     asyncio.create_task(push_loop())
@@ -33,7 +31,7 @@ if os.environ.get("SKIP_REMOTE_CONNECTION", False):
     repo = Repo.init(os.environ["LOCAL_REPO_FOLDER"])
     logger.info("init repo")
 else:
-    logger.info("cloning repo")
+    logger.info("cloning repo: " + os.environ["REPO_URL"])
     repo = Repo.clone_from(os.environ["REPO_URL"], os.environ["LOCAL_REPO_FOLDER"])
 
 logger.info("setting username and email")

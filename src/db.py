@@ -100,14 +100,16 @@ def push():
         origin = repo.remote(name='origin')
         logger.info("pushing to remote")
         try:
-            # Set git configs before pushing
-            repo.git.config('--global', 'http.sslBackend', 'openssl')
+            # GnuTLS specific configurations
+            repo.git.config('--global', 'http.sslVerify', 'true')
+            repo.git.config('--global', 'http.minTlsVersion', 'tlsv1.2')
             repo.git.config('--global', 'http.postBuffer', '524288000')
-            logger.info("Git SSL config updated")
+            logger.info("Git GnuTLS config updated")
             
             # Enable debugging
             os.environ['GIT_TRACE'] = '1'
             os.environ['GIT_CURL_VERBOSE'] = '1'
+            os.environ['GIT_TRACE_PACKET'] = '1'
             
             # Try push with detailed logging
             result = repo.git.push('--verbose', '--porcelain')
@@ -117,13 +119,6 @@ def push():
             logger.error(f"Push failed with error type: {type(e)}")
             logger.error(f"Push error: {str(e)}")
             
-            # Get git config for debugging
-            try:
-                ssl_backend = repo.git.config('--get', 'http.sslBackend')
-                logger.info(f"Current SSL backend: {ssl_backend}")
-            except Exception as ce:
-                logger.error(f"Failed to get SSL backend config: {str(ce)}")
-                
     except ValueError:
         logger.info("Skipping due to missing remote origin")
         return

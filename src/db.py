@@ -98,27 +98,6 @@ def commit(file_path: str | None, commit_message: str):
 def push():
     try:
         origin = repo.remote(name='origin')
-        logger.info("pushing to remote")
-        try:
-            # GnuTLS specific configurations
-            repo.git.config('--global', 'http.sslVerify', 'true')
-            repo.git.config('--global', 'http.minTlsVersion', 'tlsv1.2')
-            repo.git.config('--global', 'http.postBuffer', '524288000')
-            logger.info("Git GnuTLS config updated")
-            
-            # Enable debugging
-            os.environ['GIT_TRACE'] = '1'
-            os.environ['GIT_CURL_VERBOSE'] = '1'
-            os.environ['GIT_TRACE_PACKET'] = '1'
-            
-            # Try push with detailed logging
-            result = repo.git.push('--verbose', '--porcelain')
-            logger.info(f"Push command output: {result}")
-            
-        except Exception as e:
-            logger.error(f"Push failed with error type: {type(e)}")
-            logger.error(f"Push error: {str(e)}")
-            
     except ValueError:
         logger.info("Skipping due to missing remote origin")
-        return
+    origin.push()

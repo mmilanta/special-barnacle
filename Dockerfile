@@ -7,7 +7,9 @@ COPY pyproject.toml ${APP_DIR}/pyproject.toml
 
 RUN apt-get update -y
 RUN apt-get install -y --no-install-recommends curl vim git
+RUN apt-get install -y --no-install-recommends curl vim git openssl ca-certificates
 RUN git config --global http.sslBackend openssl
+RUN git config --global http.sslVerify true
 RUN pip install .
 
 EXPOSE 8080

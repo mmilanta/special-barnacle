@@ -4,6 +4,8 @@ import logging
 import shutil
 import aiofiles
 import asyncio
+from pathlib import Path
+import base64
 
 logger = logging.getLogger("uvicorn")
 data_folder = os.environ["LOCAL_REPO_FOLDER"]
@@ -25,6 +27,43 @@ async def push_loop():
 
 if asyncio.get_event_loop().is_running():
     asyncio.create_task(push_loop())
+
+
+
+def setup_ssh_key():
+    # Get the base64 encoded private key from environment variable
+    private_key_b64 = os.getenv('PRIVATE_KEY')
+    if not private_key_b64:
+        raise ValueError("No private key provided in environment variables")
+
+    # Decode the base64 key
+    private_key = base64.b64decode(private_key_b64).decode('utf-8')
+    
+    # Create .ssh directory
+    ssh_dir = Path.home() / '.ssh'
+    ssh_dir.mkdir(mode=0o700, exist_ok=True)
+    
+    # Write the private key to a file
+    key_path = ssh_dir / 'id_rsa'
+    key_path.write_text(private_key)
+    
+    # Set correct permissions
+    key_path.chmod(0o600)
+    
+    # Create known_hosts file if it doesn't exist
+    known_hosts = ssh_dir / 'known_hosts'
+    if not known_hosts.exists():
+        known_hosts.touch(mode=0o600)
+        
+    # Add github.com to known hosts
+    os.system('ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts')
+
+    # Debug: Print the first few characters of the key (safely)
+    print("First few chars of key:", private_key[:50])
+    # Debug: Check file permissions
+    print("Key file permissions:", oct(key_path.stat().st_mode)[-3:])
+
+setup_ssh_key()
 
 
 if os.environ.get("SKIP_REMOTE_CONNECTION", False):

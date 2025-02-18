@@ -32,12 +32,7 @@ if asyncio.get_event_loop().is_running():
 
 def setup_ssh_key():
     # Get the base64 encoded private key from environment variable
-    private_key_b64 = os.getenv('PRIVATE_KEY')
-    if not private_key_b64:
-        raise ValueError("No private key provided in environment variables")
-
-    # Decode the base64 key
-    private_key = base64.b64decode(private_key_b64).decode('utf-8')
+    private_key = os.getenv('PRIVATE_KEY')
     
     # Create .ssh directory
     ssh_dir = Path.home() / '.ssh'

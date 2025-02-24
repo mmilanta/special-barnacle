@@ -6,7 +6,8 @@ from db import get_data, set_data, delete_data, list_data
 
 
 class DBModel(BaseModel):
-    prefix: ClassVar[Literal["prefix"]] = "prefix"
+    prefix: ClassVar[str]
+    file_extension: ClassVar[str]
     id: str
 
     @classmethod
@@ -16,77 +17,51 @@ class DBModel(BaseModel):
     @classmethod
     async def delete(cls, id: str) -> None:
         key = cls.get_key(id=id)
-        await delete_db(db_path(key))
+        await delete_data(cls._to_path(key))
 
     @classmethod
     async def load(cls, id: str):
         key = cls.get_key(id=id)
-        model_dict = await get_db(db_path(key))
-        return cls(**model_dict, id=id)
+        model_raw = await get_data(cls._to_path(key))
+        model_dict = json.loads(model_raw)
+        model_dict["id"] = id
+        return cls.model_validate(model_dict)
 
-    async def save(self):
+    async def save(self: "DBModel"):
         key = self.get_key(id=self.id)
-        await set_db(db_path(key), self.model_dump(exclude={"prefix", "id"}))
+        data_json = json.dumps(self.model_dump(exclude={"prefix", "id", "file_extension"}), indent=4).encode("utf-8")
+        await set_data(self._to_path(key), data_json)
 
     @classmethod
     async def all(cls):
-        keys = [k for k in await list_db() if k.startswith(cls.prefix)]
-        ids = [k[len(cls.prefix) + 1 :] for k in keys]
+        keys = [k for k in await list_data() if k.startswith(cls.prefix)]
+        ids = [k[len(cls.prefix) + 1 : - len(cls.file_extension)] for k in keys]
         return [await cls.load(id) for id in ids]
 
-
-CACHE: dict[str, dict] = {}
-
-
-async def get_db(key: str) -> dict:
-    if key in CACHE:
-        return CACHE[key]
-    data = await get_data(key)
-    CACHE[key] = json.loads(data)
-    return CACHE[key]
+    @classmethod
+    def _to_path(cls, key: str) -> str:
+        return key + cls.file_extension
 
 
-async def set_db(key: str, data: dict) -> None:
-    if key in CACHE:
-        CACHE.pop(key)
-    data_json = json.dumps(data, indent=4).encode("utf-8")
-    await set_data(key, data_json)
-
-async def delete_db(key: str) -> None:
-    if key in CACHE:
-        CACHE.pop(key)
-    
-    await delete_data(key)
-
-
-async def list_db() -> list[str]:
-    paths = await list_data()
-    keys = [path[:-5] for path in paths if path.endswith(".json")]
-    return keys
-
-
-async def fetch_valid_categories() -> list[str]:
-    if "valid_categories" not in CACHE:
-        data = await get_data(db_path("valid_categories"))
-        CACHE["valid_categories"] = json.loads(data)
-    return CACHE["valid_categories"]
-
-
-async def fetch_superusers_email() -> list[str]:
-    if "superusers" not in CACHE:
-        data = await get_data(db_path("superusers"))
-        CACHE["superusers"] = json.loads(data)
-    return CACHE["superusers"]
-
-
-def db_path(key: str = "", extension: str = ".json") -> str:
+def to_path(key: str = "", extension: str = ".json") -> str:
     if key:
         key += extension
     return key
 
 
+async def fetch_valid_categories() -> list[str]:
+    data = await get_data("valid_categories.json")
+    return json.loads(data)
+
+
+async def fetch_superusers_email() -> list[str]:
+    data = await get_data("superusers.json")
+    return json.loads(data)
+
+
 class Recipe(DBModel):
     prefix: ClassVar[Literal["recipe"]] = "recipe"
+    file_extension: ClassVar[Literal[".json"]] = ".json"
     title: str
     category: str
     ingredients: str
@@ -97,6 +72,7 @@ class Recipe(DBModel):
 
 class User(DBModel):
     prefix: ClassVar[Literal["user"]] = "user"
+    file_extension: ClassVar[Literal[".json"]] = ".json"
     name: str
     email: str
     is_superuser: bool

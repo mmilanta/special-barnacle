@@ -3,8 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 import os
-from api import api
 from ui import ui
+from api import api
 from oauth import oauth_app
 
 app = FastAPI()

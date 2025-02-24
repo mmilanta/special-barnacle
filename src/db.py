@@ -120,7 +120,7 @@ async def list_data() -> list[str]:
 
 def check_valid_path(key: str):
     if not os.path.isfile(os.path.join(data_folder, key)):
-        raise FileNotFoundError()
+        raise FileNotFoundError(f"File {os.path.join(data_folder, key)} not found")
 
 
 def commit(file_path: str | None, commit_message: str):

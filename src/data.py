@@ -1,41 +1,51 @@
-from pydantic import BaseModel
-from typing import Literal
-from typing import ClassVar
 import json
-from db import get_data, set_data, delete_data, list_data
+from typing import ClassVar, Literal
+
+from pydantic import BaseModel, Field
+
+from db import delete_data, get_data, get_record, list_data, set_data
 
 
 class DBModel(BaseModel):
     prefix: ClassVar[str]
     file_extension: ClassVar[str]
     id: str
+    version: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
 
     @classmethod
     def get_key(cls, id: str) -> str:
         return cls.prefix + ":" + id
 
     @classmethod
-    async def delete(cls, id: str) -> None:
+    async def delete(cls, id: str, version: str) -> None:
         key = cls.get_key(id=id)
-        await delete_data(cls._to_path(key))
+        await delete_data(cls._to_path(key), version)
 
     @classmethod
     async def load(cls, id: str):
         key = cls.get_key(id=id)
-        model_raw = await get_data(cls._to_path(key))
+        model_raw, version = await get_record(cls._to_path(key))
         model_dict = json.loads(model_raw)
         model_dict["id"] = id
+        model_dict["version"] = version
         return cls.model_validate(model_dict)
 
     async def save(self: "DBModel"):
         key = self.get_key(id=self.id)
-        data_json = json.dumps(self.model_dump(exclude={"prefix", "id", "file_extension"}), indent=4).encode("utf-8")
-        await set_data(self._to_path(key), data_json)
+        data_json = json.dumps(
+            self.model_dump(exclude={"prefix", "id", "file_extension", "version"}),
+            indent=4,
+        ).encode("utf-8")
+        self.version = await set_data(self._to_path(key), data_json, self.version)
 
     @classmethod
     async def all(cls):
-        keys = [k for k in await list_data() if k.startswith(cls.prefix)]
-        ids = [k[len(cls.prefix) + 1 : - len(cls.file_extension)] for k in keys]
+        keys = [
+            k
+            for k in await list_data()
+            if k.startswith(cls.prefix + ":") and k.endswith(cls.file_extension)
+        ]
+        ids = [k[len(cls.prefix) + 1 : -len(cls.file_extension)] for k in keys]
         return [await cls.load(id) for id in ids]
 
     @classmethod
@@ -67,7 +77,6 @@ class Recipe(DBModel):
     ingredients: str
     steps: str
     notes: str | None
-
 
 
 class User(DBModel):

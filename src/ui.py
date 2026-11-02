@@ -1,22 +1,29 @@
-import mistune
-from fastapi import FastAPI, Request, Depends
-from data import Recipe, fetch_valid_categories
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from oauth import get_current_user
 import logging
+from pathlib import Path
+from typing import Annotated
+
+import mistune
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+from data import Recipe, fetch_valid_categories
+from oauth import get_current_user
+
 logger = logging.getLogger("uvicorn")
 
 ui = FastAPI()
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+
 
 @ui.get("/", response_class=HTMLResponse)
-async def index_page(request: Request, user: dict | None = Depends(get_current_user)):
+async def index_page(
+    request: Request, user: Annotated[dict | None, Depends(get_current_user)]
+):
 
     recipes = await Recipe.all()
     recipes_by_category: dict[str, list[dict[str, str]]] = {
-        category: [] for category in
-        await fetch_valid_categories()
+        category: [] for category in await fetch_valid_categories()
     }
     for recipe in recipes:
         if recipe.category not in recipes_by_category:
@@ -25,25 +32,33 @@ async def index_page(request: Request, user: dict | None = Depends(get_current_u
         recipes_by_category[recipe.category].append(
             {"title": recipe.title, "id": recipe.id}
         )
-    for category in recipes_by_category:
-        recipes_by_category[category].sort(key=lambda x: x["title"])
+    for recipes_in_category in recipes_by_category.values():
+        recipes_in_category.sort(key=lambda x: x["title"])
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
             "recipes_by_category": recipes_by_category,
             "valid_categories": await fetch_valid_categories(),
-            "user": user
+            "user": user,
         },
     )
 
 
 @ui.get("/recipe/{recipe_id}", response_class=HTMLResponse)
-async def recipe_page(request: Request, recipe_id, user: dict | None = Depends(get_current_user)):
+async def recipe_page(
+    request: Request, recipe_id, user: Annotated[dict | None, Depends(get_current_user)]
+):
     try:
         recipe = await Recipe.load(id=recipe_id)
-    except FileNotFoundError:
-        return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Recipe not found"})
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+        return templates.TemplateResponse(
+            request=request,
+            name="error.html",
+            context={"status_code": "404", "message": "Recipe not found"},
+        )
     recipe_dict = recipe.model_dump()
     recipe_dict["ingredients"] = markdown_to_html(recipe.ingredients)
     recipe_dict["steps"] = markdown_to_html(recipe.steps)
@@ -58,12 +73,21 @@ async def recipe_page(request: Request, recipe_id, user: dict | None = Depends(g
 async def recipe_edit_page(request: Request, recipe_id):
     try:
         recipe = await Recipe.load(id=recipe_id)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Recipe not found"})
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+        return templates.TemplateResponse(
+            request=request,
+            name="error.html",
+            context={"status_code": "404", "message": "Recipe not found"},
+        )
     return templates.TemplateResponse(
-        request=request, name="recipe_edit.html", context={"recipe": recipe.model_dump(), "valid_categories": await fetch_valid_categories()}
+        request=request,
+        name="recipe_edit.html",
+        context={
+            "recipe": recipe.model_dump(),
+            "valid_categories": await fetch_valid_categories(),
+        },
     )
 
 
@@ -78,13 +102,20 @@ async def create_recipe_page(request: Request):
 
 @ui.get("/error", response_class=HTMLResponse)
 def error_page(request: Request, status: int, message: str):
-    return templates.TemplateResponse(request=request, name="error.html", context={"status_code": str(status), "message": message})
-
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
+        context={"status_code": str(status), "message": message},
+    )
 
 
 @ui.exception_handler(404)
 def missing_page(request: Request, exc):
-    return templates.TemplateResponse(request=request, name="error.html", context={"status_code": "404", "message": "Page not found"})
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
+        context={"status_code": "404", "message": "Page not found"},
+    )
 
 
 def markdown_to_html(text: str) -> str:

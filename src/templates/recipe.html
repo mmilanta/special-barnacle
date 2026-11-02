@@ -2,6 +2,7 @@
 <html lang="en">
 <link rel="stylesheet" href="/static/css/app.css">
 {% include "typography.html" %}
+<link rel="stylesheet" href="/static/css/recipe_history.css">
 <link rel="shortcut icon" href="/static/favicon.svg">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -42,13 +43,9 @@
         ←
       </button>
       <p class="xl:text-8xl lg:text-7xl md:text-6xl sm:text-5xl text-4xl font-serif"> {{ title }} </p>
-      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ingredienti</p>
-      <div class="font-serif text-lg">{{ ingredients|safe }}</div>
-      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ricetta</p>
-      <div class="font-serif text-lg">{{ steps|safe }}</div>
-      {% if notes %}
-      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Note</p>
-      <div class="font-serif text-lg">{{ notes|safe }}</div>
+      {% include "recipe_content.html" %}
+      {% if last_edited %}
+      <p class="font-serif text-sm"><time datetime="{{ last_edited.date }}">{{ last_edited.date_label }}</time></p>
       {% endif %}
       <div class="flex flex-row">
       {% if user %}
@@ -56,6 +53,7 @@
       <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-yellow-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="go_to_edit()">
         Edit
       </button>      
+      <a class="history-button sm:text-lg md:text-xl lg:text-2xl border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" href="{{ url_for('recipe_history_page', recipe_id=id) }}">Cronologia</a>
       <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-red-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="delete_recipe()">
         Delete
       </button>

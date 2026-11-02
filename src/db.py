@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import time
+from collections import OrderedDict
 from functools import lru_cache
 from io import BytesIO
 from urllib.parse import quote
@@ -41,14 +42,23 @@ class GitHubStore:
         self.files: dict[str, tuple[bytes, str]] = {}
         self.expires_at = 0.0
         self.lock = asyncio.Lock()
+        self.history_lock = asyncio.Lock()
+        self.history_cache = OrderedDict()
 
-    async def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
+    async def _request(
+        self, method: str, url: str, *, allow_not_found=False, **kwargs
+    ) -> httpx.Response:
+        unavailable = (
+            UNAVAILABLE
+            if method in ("PUT", "DELETE")
+            else "Archivio GitHub non disponibile. Riprova tra poco."
+        )
         try:
             response = await self.client.request(method, url, **kwargs)
         except httpx.RequestError as exc:
             self.expires_at = 0
-            raise HTTPException(503, UNAVAILABLE) from exc
-        if response.is_success:
+            raise HTTPException(503, unavailable) from exc
+        if response.is_success or (allow_not_found and response.status_code == 404):
             return response
         self.expires_at = 0
         if response.status_code in (409, 422):
@@ -57,7 +67,7 @@ class GitHubStore:
         logger.warning(
             "GitHub storage request failed: %s %s", method, response.status_code
         )
-        raise HTTPException(503, UNAVAILABLE)
+        raise HTTPException(503, unavailable)
 
     async def _refresh(self):
         if time.monotonic() < self.expires_at:
@@ -106,8 +116,96 @@ class GitHubStore:
             await self._refresh()
             return sorted(self.files)
 
+    @staticmethod
+    def _validate_revision(revision: str):
+        if not re.fullmatch(r"[0-9a-f]{40}", revision):
+            raise HTTPException(400, "Versione non valida")
+
+    @staticmethod
+    def _revision_info(item: dict) -> dict:
+        author = item["commit"].get("author") or {}
+        committer = item["commit"].get("committer") or {}
+        return {
+            "sha": item["sha"],
+            "date": author.get("date") or committer.get("date"),
+            "editor": author.get("name")
+            or committer.get("name")
+            or "Autore non disponibile",
+        }
+
+    async def history(
+        self, key: str, page: int = 1, ref: str | None = None, per_page: int = 20
+    ) -> dict:
+        self._validate_key(key)
+        if ref is not None:
+            self._validate_revision(ref)
+        if page < 1 or not 1 <= per_page <= 100:
+            raise HTTPException(400, "Pagina non valida")
+        cache_key = (key, page, ref, per_page)
+        async with self.history_lock:
+            cached = self.history_cache.get(cache_key)
+            if cached and time.monotonic() < cached[0]:
+                self.history_cache.move_to_end(cache_key)
+                return cached[1]
+            response = await self._request(
+                "GET",
+                f"{self.base}/commits",
+                params={
+                    "path": key,
+                    "sha": ref or self.branch,
+                    "page": page,
+                    "per_page": per_page,
+                },
+            )
+            entries = [self._revision_info(item) for item in response.json()]
+            result = {
+                "entries": entries,
+                "page": page,
+                # Anchor subsequent pages so new saves cannot shift entries between pages.
+                "ref": ref or (entries[0]["sha"] if entries else None),
+                "has_more": "next" in response.links,
+            }
+            self.history_cache[cache_key] = (
+                time.monotonic() + self.cache_seconds,
+                result,
+            )
+            self.history_cache.move_to_end(cache_key)
+            while len(self.history_cache) > 128:
+                self.history_cache.popitem(last=False)
+            return result
+
+    async def revision(self, key: str, revision: str) -> dict:
+        self._validate_key(key)
+        self._validate_revision(revision)
+        commit = await self._request(
+            "GET", f"{self.base}/commits/{revision}", allow_not_found=True
+        )
+        if commit.status_code == 404:
+            raise HTTPException(404, "Versione non trovata")
+        response = await self._request(
+            "GET",
+            f"{self.base}/contents/{quote(key, safe='')}",
+            params={"ref": revision},
+            allow_not_found=True,
+        )
+        result = {
+            "revision": self._revision_info(commit.json()),
+            "data": None,
+            "version": None,
+        }
+        # A deletion is itself a historical event; do not confuse it with API downtime.
+        if response.status_code != 404:
+            content = response.json()
+            result["data"] = base64.b64decode(content["content"])
+            result["version"] = content["sha"]
+        return result
+
     async def mutate(
-        self, key: str, data: bytes | None, version: str | None
+        self,
+        key: str,
+        data: bytes | None,
+        version: str | None,
+        author: dict | None = None,
     ) -> str | None:
         self._validate_key(key)
         # GitHub requires Contents updates and deletions to be serialized.
@@ -127,11 +225,20 @@ class GitHubStore:
                 payload["sha"] = version
             if data is not None:
                 payload["content"] = base64.b64encode(data).decode("ascii")
-            response = await self._request(
-                "DELETE" if data is None else "PUT",
-                f"{self.base}/contents/{quote(key, safe='')}",
-                json=payload,
-            )
+            if author is not None:
+                payload["author"] = author
+            try:
+                response = await self._request(
+                    "DELETE" if data is None else "PUT",
+                    f"{self.base}/contents/{quote(key, safe='')}",
+                    json=payload,
+                )
+            finally:
+                # Also invalidate after ambiguous failures: GitHub may have committed.
+                async with self.history_lock:
+                    for cached_key in list(self.history_cache):
+                        if cached_key[0] == key:
+                            self.history_cache.pop(cached_key, None)
             if data is None:
                 self.files.pop(key)
                 return None
@@ -167,14 +274,26 @@ async def get_data(key: str) -> bytes:
     return data
 
 
-async def set_data(key: str, data: bytes, version: str | None = None) -> str:
-    sha = await get_store().mutate(key, data, version)
+async def set_data(
+    key: str, data: bytes, version: str | None = None, author: dict | None = None
+) -> str:
+    sha = await get_store().mutate(key, data, version, author)
     assert sha is not None
     return sha
 
 
-async def delete_data(key: str, version: str) -> None:
-    await get_store().mutate(key, None, version)
+async def delete_data(key: str, version: str, author: dict | None = None) -> None:
+    await get_store().mutate(key, None, version, author)
+
+
+async def recipe_history(
+    key: str, page: int = 1, ref: str | None = None, per_page: int = 20
+) -> dict:
+    return await get_store().history(key, page, ref, per_page)
+
+
+async def recipe_revision(key: str, revision: str) -> dict:
+    return await get_store().revision(key, revision)
 
 
 async def list_data() -> list[str]:

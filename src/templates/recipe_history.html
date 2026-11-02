@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cronologia — {{ title }}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% include "typography.html" %}
+  <link rel="stylesheet" href="/static/css/recipe_history.css">
+  <link rel="shortcut icon" href="/static/favicon.svg">
+</head>
+<body class="bg-orange-50 min-h-screen">
+  <main class="history-page container px-5 mx-auto font-serif">
+    <a class="history-link" href="{{ url_for('recipe_page', recipe_id=recipe_id) }}">← Torna alla ricetta</a>
+    <h1 class="history-title">Cronologia</h1>
+    <p class="text-2xl">{{ title }}</p>
+    {% if entries %}
+    <ul class="history-list">
+      {% for entry in entries %}
+      <li class="history-entry">
+        <time datetime="{{ entry.date }}">{{ entry.date_label }}</time>
+        <span>{{ entry.editor }}</span>
+        <div class="history-actions">
+          <a class="history-link" title="Apri questa versione" href="{{ url_for('recipe_version_page', recipe_id=recipe_id, revision=entry.sha) }}">apri</a>
+          {% if entry.has_previous %}
+          <a class="history-link" title="Confronta con la versione precedente" href="{{ url_for('recipe_diff_page', recipe_id=recipe_id, revision=entry.sha) }}?compare=previous">prec</a>
+          {% endif %}
+          {% if entry.sha != latest_sha %}
+          <a class="history-link" title="Confronta con la versione attuale" href="{{ url_for('recipe_diff_page', recipe_id=recipe_id, revision=entry.sha) }}?compare=current">curr</a>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>Nessuna versione disponibile.</p>
+    {% endif %}
+    <nav class="history-pagination" aria-label="Pagine della cronologia">
+      {% if previous_url %}<a class="history-link" href="{{ previous_url }}">← Più recenti</a>{% endif %}
+      {% if next_url %}<a class="history-link" href="{{ next_url }}">Meno recenti →</a>{% endif %}
+    </nav>
+  </main>
+</body>
+</html>

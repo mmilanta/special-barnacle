@@ -76,11 +76,14 @@ interpolation. No SSH key or local data volume is needed.
 
 ```sh
 .venv/bin/python -m unittest discover -s tests -v
+node tests/test_search.cjs
 ```
 
 Tests simulate GitHub at the HTTP boundary and cover caching/redirects, JSON
 round trips, create/update/delete, stale and concurrent writes, GitHub failures,
-authorization, version validation, and rendered pages. They do not touch live data.
+authorization, version validation, rendered pages, and optional notes. The Node
+tests cover live search, accent handling, empty results, and clearing the filter.
+Tests do not touch live data.
 
 ## Rebuild CSS from Tailwind
 
@@ -88,3 +91,9 @@ authorization, version validation, and rendered pages. They do not touch live da
 cd src/tailwindcss
 npx tailwindcss -i ./styles/app.css -o ../static/css/app.css --watch
 ```
+
+## Typography
+
+Libre Baskerville is served locally in regular and italic variable WOFF2 files,
+including weights 400–700. See `src/static/fonts/libre-baskerville/README.md` for
+sources and `OFL.txt` for its license. No Google Fonts requests are made at runtime.

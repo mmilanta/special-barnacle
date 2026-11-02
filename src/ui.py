@@ -30,7 +30,7 @@ async def index_page(
             logger.error(f"Category {recipe.category} not found in valid categories")
             recipes_by_category[recipe.category] = []
         recipes_by_category[recipe.category].append(
-            {"title": recipe.title, "id": recipe.id}
+            {"title": recipe.title, "id": recipe.id, "ingredients": recipe.ingredients}
         )
     for recipes_in_category in recipes_by_category.values():
         recipes_in_category.sort(key=lambda x: x["title"])
@@ -62,7 +62,8 @@ async def recipe_page(
     recipe_dict = recipe.model_dump()
     recipe_dict["ingredients"] = markdown_to_html(recipe.ingredients)
     recipe_dict["steps"] = markdown_to_html(recipe.steps)
-    recipe_dict["notes"] = markdown_to_html(recipe.notes)
+    notes = (recipe.notes or "").strip()
+    recipe_dict["notes"] = markdown_to_html(notes) if notes else ""
     recipe_dict["user"] = user
     return templates.TemplateResponse(
         request=request, name="recipe.html", context=recipe_dict

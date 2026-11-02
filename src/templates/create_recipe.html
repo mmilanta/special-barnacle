@@ -8,30 +8,10 @@
     <title>Create Recipe {{ title }}</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
-        function fetchUUID() {
-            const xhr = new XMLHttpRequest();
-            let result = null;
-        
-            try {
-                xhr.open('GET', 'api/v1/uuid', false); // `false` makes the request synchronous
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.send();
-        
-                if (xhr.status === 200) {
-                    result = JSON.parse(xhr.responseText); // Parse the UUID from the response
-                    console.log('UUID:', result);
-                } else {
-                    console.error('Error fetching UUID:', xhr.status, xhr.statusText);
-                }
-            } catch (error) {
-                console.error('Request failed:', error);
-            }
-        
-            return result;
-        }
-        
+        const recipeId = crypto.randomUUID();
+
         function submit_request() {
-            const uuid = fetchUUID();
+            const uuid = recipeId;
             title = document.getElementById("ftitle").value
             category = document.getElementById("fcategory").value
             ingredients = document.getElementById("fingredients").value
@@ -51,6 +31,7 @@
                 "notes": document.getElementById("fnotes").value
             };
 
+          $("#save-button").prop("disabled", true);
           $.ajax({
               url: '/api/v1/recipe/' + uuid, 
               type: 'PUT',
@@ -61,8 +42,10 @@
                   window.location.replace(`./recipe/${uuid}`);
               },
               error: function (xhr, status, error) {
-                const message = encodeURIComponent(xhr.responseJSON.detail); // Encode message for safe URL usage
-                window.location.replace(`/error?status=${xhr.status}&message=${message}`);
+                alert(xhr.responseJSON?.detail || "Salvataggio non confermato. Riprova senza chiudere questa pagina.");
+              },
+              complete: function () {
+                $("#save-button").prop("disabled", false);
               }
           });
       }
@@ -151,7 +134,7 @@
 
       <br />
       <div class="flex flex-row">
-        <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-green-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="submit_request()">
+        <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-green-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" id="save-button" onclick="submit_request()">
           Crea
         </button>
         <button class="sm:text-lg md:text-xl lg:text-2xl hover:bg-red-500 hover:text-white border-2 border-black py-2 px-4 mx-2 font-serif rounded w-fit" onclick="window.location.replace('./')">

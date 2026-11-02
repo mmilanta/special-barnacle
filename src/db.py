@@ -1,140 +1,181 @@
-from git import Repo
-import os
-import logging
-import shutil
-import aiofiles
+"""GitHub-backed JSON storage. No durable state lives in the container."""
+
 import asyncio
-from pathlib import Path
 import base64
+import hashlib
+import logging
+import os
+import re
+import time
+from functools import lru_cache
+from io import BytesIO
+from urllib.parse import quote
+from zipfile import BadZipFile, ZipFile
+
+import httpx
+from fastapi import HTTPException
 
 logger = logging.getLogger("uvicorn")
-data_folder = os.environ["LOCAL_REPO_FOLDER"]
-
-PUSH_DUE: bool = False
-
-if os.path.isdir(os.environ["LOCAL_REPO_FOLDER"]):
-    shutil.rmtree(os.environ["LOCAL_REPO_FOLDER"])
-
-async def push_loop():
-    global PUSH_DUE
-    while True:
-        await asyncio.sleep(int(os.environ["PUSH_EVERY_N_SECONDS"]))
-        if PUSH_DUE:
-            push()
-            PUSH_DUE = False
-        else:
-            logger.info("skipping PUSH")
-
-if asyncio.get_event_loop().is_running():
-    asyncio.create_task(push_loop())
+CONFLICT = "La ricetta è cambiata. Aprila in una nuova scheda e confronta le modifiche prima di riprovare."
+UNAVAILABLE = (
+    "Archivio GitHub non disponibile. Riprova; il salvataggio non è confermato."
+)
 
 
+class GitHubStore:
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        repo: str,
+        branch: str = "main",
+        cache_seconds: float = 60,
+    ):
+        if not re.fullmatch(r"[\w.-]+/[\w.-]+", repo) or not branch:
+            raise ValueError(
+                "Set REPO to owner/repository and GITHUB_BRANCH to a branch name"
+            )
+        self.client = client
+        self.base = f"https://api.github.com/repos/{repo}"
+        self.branch = branch
+        self.cache_seconds = cache_seconds
+        self.files: dict[str, tuple[bytes, str]] = {}
+        self.expires_at = 0.0
+        self.lock = asyncio.Lock()
 
-def setup_ssh_key():
-    # Get the base64 encoded private key from environment variable
-    private_key = os.getenv('PRIVATE_KEY')
-    if private_key[-1] != '\n':
-        private_key += '\n'
+    async def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
+        try:
+            response = await self.client.request(method, url, **kwargs)
+        except httpx.RequestError as exc:
+            self.expires_at = 0
+            raise HTTPException(503, UNAVAILABLE) from exc
+        if response.is_success:
+            return response
+        self.expires_at = 0
+        if response.status_code in (409, 422):
+            raise HTTPException(409, CONFLICT)
+        # Never expose GitHub response bodies, signed archive URLs, or credentials.
+        logger.warning(
+            "GitHub storage request failed: %s %s", method, response.status_code
+        )
+        raise HTTPException(503, UNAVAILABLE)
 
-    
-    # Create .ssh directory
-    ssh_dir = Path.home() / '.ssh'
-    ssh_dir.mkdir(mode=0o700, exist_ok=True)
-    
-    # Write the private key to a file
-    key_path = ssh_dir / 'id_rsa'
-    key_path.write_text(private_key)
-    
-    # Set correct permissions
-    key_path.chmod(0o600)
-    
-    # Create known_hosts file if it doesn't exist
-    known_hosts = ssh_dir / 'known_hosts'
-    if not known_hosts.exists():
-        known_hosts.touch(mode=0o600)
-        
-    # Add github.com to known hosts
-    os.system('ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts')
+    async def _refresh(self):
+        if time.monotonic() < self.expires_at:
+            return
+        response = await self._request(
+            "GET",
+            f"{self.base}/zipball/{quote(self.branch, safe='')}",
+            follow_redirects=True,
+        )
+        # One snapshot instead of an API call for every recipe. Never extract to disk.
+        files = {}
+        try:
+            with ZipFile(BytesIO(response.content)) as archive:
+                for entry in archive.infolist():
+                    parts = entry.filename.split("/")
+                    if (
+                        len(parts) == 2
+                        and parts[1].endswith(".json")
+                        and not entry.is_dir()
+                    ):
+                        data = archive.read(entry)
+                        sha = hashlib.sha1(
+                            b"blob " + str(len(data)).encode() + b"\0" + data
+                        ).hexdigest()
+                        files[parts[1]] = (data, sha)
+        except (BadZipFile, RuntimeError) as exc:
+            raise HTTPException(503, UNAVAILABLE) from exc
+        self.files = files
+        self.expires_at = time.monotonic() + self.cache_seconds
 
-    # Debug: Print the first few characters of the key (safely)
-    print("First few chars of key:", private_key[:50])
-    # Debug: Check file permissions
-    print("Key file permissions:", oct(key_path.stat().st_mode)[-3:])
+    @staticmethod
+    def _validate_key(key: str):
+        if not re.fullmatch(r"[\w:.-]+\.json", key):
+            raise HTTPException(400, "Nome del documento non valido")
 
-setup_ssh_key()
+    async def get(self, key: str) -> tuple[bytes, str]:
+        self._validate_key(key)
+        async with self.lock:
+            await self._refresh()
+            if key not in self.files:
+                raise HTTPException(404, "Documento non trovato")
+            return self.files[key]
+
+    async def list(self) -> list[str]:
+        async with self.lock:
+            await self._refresh()
+            return sorted(self.files)
+
+    async def mutate(
+        self, key: str, data: bytes | None, version: str | None
+    ) -> str | None:
+        self._validate_key(key)
+        # GitHub requires Contents updates and deletions to be serialized.
+        async with self.lock:
+            await self._refresh()
+            current = self.files.get(key)
+            if (current[1] if current else None) != version:
+                self.expires_at = 0
+                raise HTTPException(409, CONFLICT)
+            if data is None and current is None:
+                raise HTTPException(404, "Documento non trovato")
+            payload = {
+                "message": f"{'deleted' if data is None else 'edit' if current else 'new'}: {key}",
+                "branch": self.branch,
+            }
+            if version is not None:
+                payload["sha"] = version
+            if data is not None:
+                payload["content"] = base64.b64encode(data).decode("ascii")
+            response = await self._request(
+                "DELETE" if data is None else "PUT",
+                f"{self.base}/contents/{quote(key, safe='')}",
+                json=payload,
+            )
+            if data is None:
+                self.files.pop(key)
+                return None
+            sha = response.json()["content"]["sha"]
+            self.files[key] = (data, sha)
+            return sha
 
 
-if os.environ.get("SKIP_REMOTE_CONNECTION", False):
-    repo = Repo.init(os.environ["LOCAL_REPO_FOLDER"])
-    logger.info("init repo")
-else:
-    repu_url = os.environ["REPO_URL"]
-    if "${REPO}" in repu_url:
-        repu_url = repu_url.replace("${REPO}", os.environ["REPO"])
-    if "${GITHUB_PAT}" in repu_url:
-        repu_url = repu_url.replace("${GITHUB_PAT}", os.environ["GITHUB_PAT"])
-    logger.info("cloning repo: " + repu_url)
+@lru_cache(maxsize=1)
+def get_store() -> GitHubStore:
+    token = os.environ["GITHUB_PAT"]
+    if not token:
+        raise ValueError(
+            "GITHUB_PAT must contain a GitHub token with Contents read/write permission"
+        )
+    client = httpx.AsyncClient(
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+        timeout=httpx.Timeout(30, connect=10),
+    )
+    return GitHubStore(client, os.environ["REPO"], os.getenv("GITHUB_BRANCH", "main"))
 
-    repo = Repo.clone_from(repu_url, os.environ["LOCAL_REPO_FOLDER"])
 
-logger.info("setting username and email")
-repo.config_writer().set_value("user", "name", os.environ["USER_NAME"]).release()
-repo.config_writer().set_value("user", "email", os.environ["USER_EMAIL"]).release()
+async def get_record(key: str) -> tuple[bytes, str]:
+    return await get_store().get(key)
 
 
 async def get_data(key: str) -> bytes:
-    check_valid_path(key)
-    async with aiofiles.open(os.path.join(data_folder, key), "rb") as f:
-        data = await f.read()
+    data, _ = await get_record(key)
     return data
 
 
-async def set_data(key: str, data: bytes) -> None:
-    path = os.path.join(data_folder, key)
-    is_new_file = not os.path.isfile(path)
-    async with aiofiles.open(path, "wb+") as f:
-        await f.write(data)
-    commit(
-        file_path=key,
-        commit_message=("new" if is_new_file else "edit") + f": {key}",
-    )
-    global PUSH_DUE
-    PUSH_DUE = True
+async def set_data(key: str, data: bytes, version: str | None = None) -> str:
+    sha = await get_store().mutate(key, data, version)
+    assert sha is not None
+    return sha
 
 
-async def delete_data(key: str) -> None:
-    check_valid_path(key)
-    os.remove(os.path.join(data_folder, key))
-
-    commit(
-        file_path=None,
-        commit_message=f"deleted: {key}"
-    )
-    global PUSH_DUE
-    PUSH_DUE = True
+async def delete_data(key: str, version: str) -> None:
+    await get_store().mutate(key, None, version)
 
 
 async def list_data() -> list[str]:
-    return [entry for entry in os.listdir(data_folder)]
-
-
-def check_valid_path(key: str):
-    if not os.path.isfile(os.path.join(data_folder, key)):
-        raise FileNotFoundError(f"File {os.path.join(data_folder, key)} not found")
-
-
-def commit(file_path: str | None, commit_message: str):
-    if file_path is not None:
-        repo.index.add([file_path])
-    else:
-        repo.git.add(u=True)
-    logger.info(f"committing {commit_message}")
-    repo.index.commit(commit_message)
-
-
-def push():
-    try:
-        origin = repo.remote(name='origin')
-    except ValueError:
-        logger.info("Skipping due to missing remote origin")
-    origin.push()
+    return await get_store().list()

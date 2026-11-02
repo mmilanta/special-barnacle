@@ -17,9 +17,9 @@ class DBModel(BaseModel):
         return cls.prefix + ":" + id
 
     @classmethod
-    async def delete(cls, id: str, version: str) -> None:
+    async def delete(cls, id: str, version: str, author: dict | None = None) -> None:
         key = cls.get_key(id=id)
-        await delete_data(cls._to_path(key), version)
+        await delete_data(cls._to_path(key), version, author)
 
     @classmethod
     async def load(cls, id: str):
@@ -30,13 +30,15 @@ class DBModel(BaseModel):
         model_dict["version"] = version
         return cls.model_validate(model_dict)
 
-    async def save(self: "DBModel"):
+    async def save(self: "DBModel", author: dict | None = None):
         key = self.get_key(id=self.id)
         data_json = json.dumps(
             self.model_dump(exclude={"prefix", "id", "file_extension", "version"}),
             indent=4,
         ).encode("utf-8")
-        self.version = await set_data(self._to_path(key), data_json, self.version)
+        self.version = await set_data(
+            self._to_path(key), data_json, self.version, author
+        )
 
     @classmethod
     async def all(cls):

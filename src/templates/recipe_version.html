@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Versione del {{ revision.date_label }} — {{ title }}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% include "typography.html" %}
+  <link rel="stylesheet" href="/static/css/recipe_history.css">
+  <link rel="shortcut icon" href="/static/favicon.svg">
+</head>
+<body class="bg-orange-50 min-h-screen">
+  <main class="history-page container px-5 mx-auto font-serif">
+    <a class="history-link" href="{{ url_for('recipe_history_page', recipe_id=recipe_id) }}">← Tutte le versioni</a>
+    <aside class="history-version-notice">
+      Versione del <time datetime="{{ revision.date }}">{{ revision.date_label }}</time> · {{ revision.editor }}
+      <p>Questa è una versione precedente, in sola lettura.</p>
+      <a class="history-link" href="{{ url_for('recipe_page', recipe_id=recipe_id) }}">Vai alla ricetta attuale</a>
+    </aside>
+    <h1 class="history-title">{{ title }}</h1>
+    {% if deleted %}
+    <p>La ricetta è stata eliminata in questa versione.</p>
+    {% else %}
+    {% include "recipe_content.html" %}
+    {% endif %}
+  </main>
+</body>
+</html>

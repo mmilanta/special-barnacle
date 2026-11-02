@@ -17,8 +17,8 @@ Copy `.env.example` to `.env` and fill in:
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: existing Google OAuth credentials.
 
 The token owner must be able to commit to the selected branch. Branch protection
-requiring pull requests will reject direct writes. GitHub supplies the commit
-identity from the authenticated token owner.
+requiring pull requests will reject direct writes. GitHub uses the token owner as committer. Saves and deletes set the commit author
+to the signed-in writer’s Google name and email, derived on the server.
 
 The data repository layout is unchanged: root files `recipe:<id>.json`,
 `valid_categories.json`, `superusers.json`, and any existing `user:<id>.json` files.
@@ -48,6 +48,33 @@ it in the JSON body when updating and as `?version=<sha>` when deleting. Omit it
 into the recipe JSON files.
 
 GitHub API reference: https://docs.github.com/en/rest/repos/contents
+
+## Recipe history
+
+Every recipe page shows a small last-edited date in `dd/mm/yyyy` format, based on
+its latest GitHub commit (UTC date). Only this date is public; editor names and
+version links are restricted to signed-in accounts in `superusers.json`.
+
+Writers can open **Cronologia**, browse all versions in pages of 20, and open a
+read-only recipe snapshot at each commit. Deleted versions are identified, and
+old snapshots cannot be edited or deleted from that view. Each revision with a
+predecessor offers “prec”; older revisions also offer “curr”. “apri” opens the
+snapshot. Diffs include every field, show unchanged content once, and highlight
+removed/added lines by recipe field. Diffs escape historical HTML and require the
+same writer permissions. Pagination is anchored
+to the first version so concurrent edits do not shift the list between pages.
+History follows the recipe file path; manual Git renames are not followed.
+
+The server rechecks the writer whitelist for history and mutations, using the
+existing data cache (up to 60 seconds). Private history pages use `Cache-Control:
+private, no-store`. New saves/deletions record the signed-in writer as commit
+author. Older commits retain their recorded author, which may be a shared service
+account; missing past identities cannot be reconstructed.
+
+History metadata has a bounded 60-second in-memory cache, invalidated on mutation.
+It is fetched on recipe pages, not for every recipe on the homepage. A history
+API outage leaves available recipe content visible and omits the unavailable
+date. The existing Contents read/write token permissions are sufficient.
 
 ## Run locally
 

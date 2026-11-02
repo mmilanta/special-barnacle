@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
 
 from data import Recipe
-from oauth import get_current_user
+from oauth import require_writer
 
 api = FastAPI()
 
@@ -26,12 +26,13 @@ async def get_recipes_index() -> list[Recipe]:
 async def post_recipes_index(
     recipe_id: str,
     recipe: Recipe,
-    user: Annotated[dict | None, Depends(get_current_user)],
+    user: Annotated[dict, Depends(require_writer)],
 ) -> Recipe:
-    validate_user(user, superuser=True)
     if recipe.id != recipe_id:
         raise HTTPException(400, "Recipe ID must match the URL")
-    await recipe.save()
+    await recipe.save(
+        author={"name": user.get("name") or user["email"], "email": user["email"]}
+    )
     return recipe
 
 
@@ -39,24 +40,15 @@ async def post_recipes_index(
 async def delete_recipe(
     recipe_id: str,
     version: Annotated[str, Query(pattern=r"^[0-9a-f]{40}$")],
-    user: Annotated[dict | None, Depends(get_current_user)],
+    user: Annotated[dict, Depends(require_writer)],
 ):
-    validate_user(user, superuser=True)
-    await Recipe.delete(id=recipe_id, version=version)
+    await Recipe.delete(
+        id=recipe_id,
+        version=version,
+        author={"name": user.get("name") or user["email"], "email": user["email"]},
+    )
 
 
 @api.get("/uuid")
 async def get_uuid() -> UUID:
     return uuid4()
-
-
-def validate_user(user: dict, superuser: bool = False):
-    if user is None:
-        raise HTTPException(
-            status_code=401, detail="User must be logged in to edit recipe"
-        )
-    if superuser and not user["is_superuser"]:
-        raise HTTPException(
-            status_code=403, detail="User must be a superuser to edit recipe"
-        )
-    return user

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Differenze — {{ title }}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% include "typography.html" %}
+  <link rel="stylesheet" href="/static/css/recipe_history.css">
+  <link rel="shortcut icon" href="/static/favicon.svg">
+</head>
+<body class="bg-orange-50 min-h-screen">
+  <main class="history-page container px-5 mx-auto font-serif">
+    <a class="history-link" href="{{ url_for('recipe_history_page', recipe_id=recipe_id) }}">← Tutte le versioni</a>
+    <h1 class="history-title">Differenze</h1>
+    <p class="text-2xl">{{ title }}</p>
+    <p>{{ "Modifiche di questa versione" if compare == "previous" else "Confronto con la versione attuale" }}</p>
+    <div class="history-diff-headings">
+      <div>
+        <strong>Prima</strong>
+        {% if before %}
+        <p><time datetime="{{ before.date }}">{{ before.date_label }}</time> · {{ before.editor }}</p>
+        <a class="history-link" href="{{ url_for('recipe_version_page', recipe_id=recipe_id, revision=before.sha) }}">Apri versione</a>
+        {% else %}
+        <p>Prima della creazione della ricetta</p>
+        {% endif %}
+      </div>
+      <div>
+        <strong>Dopo</strong>
+        <p><time datetime="{{ after.date }}">{{ after.date_label }}</time> · {{ after.editor }}</p>
+        <a class="history-link" href="{{ url_for('recipe_version_page', recipe_id=recipe_id, revision=after.sha) }}">Apri versione</a>
+      </div>
+    </div>
+    {% if not has_changes %}
+    <p>Nessuna differenza nel contenuto della ricetta.</p>
+    {% endif %}
+    {% for change in changes %}
+    <section>
+      <h2 class="text-2xl">{{ change.label }}</h2>
+      {% if change.unchanged %}
+      <div class="history-diff-unchanged">{{ change.text if change.text else '—' }}</div>
+      {% else %}
+      <table class="history-diff-table" aria-label="Differenze: {{ change.label }}">
+        <thead><tr><th scope="col">Prima</th><th scope="col">Dopo</th></tr></thead>
+        <tbody>
+          {% for row in change.rows %}
+          <tr>
+            {% if not row.changed %}
+            <td colspan="2">{{ row.before }}</td>
+            {% else %}
+            <td class="{{ 'history-diff-removed' if row.changed and row.before is not none else '' }}">{% if row.before is not none %}{% if row.changed %}<span aria-hidden="true">− </span><del>{{ row.before }}</del>{% else %}{{ row.before }}{% endif %}{% endif %}</td>
+            <td class="{{ 'history-diff-added' if row.changed and row.after is not none else '' }}">{% if row.after is not none %}{% if row.changed %}<span aria-hidden="true">+ </span><ins>{{ row.after }}</ins>{% else %}{{ row.after }}{% endif %}{% endif %}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </main>
+</body>
+</html>

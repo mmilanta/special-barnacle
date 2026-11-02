@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <link rel="stylesheet" href="/static/css/app.css">
+{% include "typography.html" %}
+<link rel="stylesheet" href="/static/css/recipe_search.css">
 <link rel="shortcut icon" href="/static/favicon.svg">
 
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ricette Nonna Aua</title>
+    <script src="/static/js/recipe_search.js" defer></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
         function new_recipe() {
@@ -29,22 +32,36 @@
 </head>
 <body>
     <div class="bg-orange-50 min-h-screen">
-        <div class="container flex flex-col px-5 mx-auto xs:space-y-10 md:space-y-5 space-y-3">
-          <p class="xl:text-8xl mb-10 lg:text-7xl md:text-6xl sm:text-5xl text-4xl mt-10 font-serif">Le Ricette di Nonna Aua</p>
+        <div class="homepage-content container flex flex-col px-5 mx-auto xs:space-y-10 md:space-y-5 space-y-3">
+          <p class="homepage-title mb-10 mt-10 font-serif">Le Ricette di Nonna Aua</p>
+          <div role="search" class="recipe-search font-serif sm:text-lg md:text-xl lg:text-2xl">
+            <div class="recipe-search-field">
+              <input
+                id="recipe-search"
+                type="search"
+                placeholder="Cerca"
+                aria-label="Cerca una ricetta per nome o ingrediente"
+                autocomplete="off"
+                class="recipe-search-input"
+              >
+              <button id="clear-search" type="button" class="recipe-search-clear" aria-label="Cancella la ricerca" title="Cancella la ricerca" hidden>×</button>
+            </div>
+          </div>
+          <p id="search-status" class="recipe-search-empty font-serif sm:text-lg md:text-xl lg:text-2xl" role="status" aria-live="polite" aria-atomic="true" hidden></p>
             {% for category in recipes_by_category %}
-          <div class="container flex flex-col px-5 mx-auto space-y-0">
+          <section class="container px-5 mx-auto space-y-0" data-recipe-category>
             <div class="container  xl:space-y-5 md:space-y-2 space-y-1">
               <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">{{category}}</p>
               <div class="container px-5 xl:space-y-2 md:space-y-1 ">
 
                 {% for recipe in recipes_by_category[category] %}
-                <div>
-                  <p onclick="location.href = '{{ url_for('recipe_page', recipe_id=recipe['id']) }}'" class="font-serif text-md hover:underline sm:text-lg md:text-xl lg:text-2xl">{{ recipe.title }}</p>
+                <div data-recipe-search="{{ recipe.title }} {{ recipe.ingredients }}">
+                  <a href="{{ url_for('recipe_page', recipe_id=recipe['id']) }}" class="block font-serif text-md hover:underline sm:text-lg md:text-xl lg:text-2xl">{{ recipe.title }}</a>
                 </div>
                 {% endfor %}
               </div>
             </div>
-          </div>
+          </section>
 
         {% endfor %}
           <div class="h-5"></div>

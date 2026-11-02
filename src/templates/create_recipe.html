@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <link rel="stylesheet" href="/static/css/app.css">
+{% include "typography.html" %}
 <link rel="shortcut icon" href="/static/favicon.svg">
 
 <head>
@@ -71,6 +72,11 @@
           autoResizeTextarea(ta);
         });
   
+        // Recalculate wrapping once the bundled font is ready.
+        document.fonts.ready.then(() => {
+          textareas.forEach((ta) => autoResizeTextarea(ta));
+        });
+
         // Also, re-check sizes on window resize
         window.addEventListener('resize', () => {
           textareas.forEach((ta) => autoResizeTextarea(ta));
@@ -88,13 +94,13 @@
         id="ftitle"
         rows="1"
         placeholder="Scrivi qui il titolo"
-        class="xl:text-8xl lg:text-7xl md:text-6xl sm:text-5xl text-4xl font-mono bg-inherit focus:bg-inherit resize-none mt-10"
+        class="xl:text-8xl lg:text-7xl md:text-6xl sm:text-5xl text-4xl font-serif bg-inherit focus:bg-inherit resize-none mt-10"
       ></textarea>
       
       <!-- Category -->
       <select
         id="fcategory"
-        class="font-mono border text-sm rounded-lg block w-full p-2.5 "
+        class="font-serif border text-sm rounded-lg block w-full p-2.5 "
       >
         {% for category in valid_categories %}
           <option value="{{category}}">
@@ -106,29 +112,29 @@
       </select>
 
       <!-- Ingredients -->
-      <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ingredienti</p>
+      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ingredienti</p>
       <textarea
         id="fingredients"
         placeholder="Scrivi qui gli ingredienti"
-        class="font-mono text-lg bg-inherit focus:bg-inherit resize-none"
+        class="font-serif text-lg bg-inherit focus:bg-inherit resize-none"
         rows="1"
       ></textarea>
 
       <!-- Steps -->
-      <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ricetta</p>
+      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Ricetta</p>
       <textarea
         id="fsteps"
         placeholder="Scrivi qui la ricetta"
-        class="font-mono text-lg bg-inherit focus:bg-inherit resize-none"
+        class="font-serif text-lg bg-inherit focus:bg-inherit resize-none"
         rows="1"
       ></textarea>
 
       <!-- Notes -->
-      <p class="font-mono text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Note</p>
+      <p class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Note</p>
       <textarea
         id="fnotes"
         placeholder="Scrivi qui le note (opzionale)"
-        class="font-mono text-lg bg-inherit focus:bg-inherit resize-none"
+        class="font-serif text-lg bg-inherit focus:bg-inherit resize-none"
         rows="1"
       ></textarea>
 

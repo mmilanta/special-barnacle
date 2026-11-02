@@ -285,6 +285,20 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.status_code, 503)
         self.assertEqual(self.github.files[KEY], ORIGINAL)
 
+    async def test_notes_section_only_appears_with_content(self):
+        for notes in (None, "", "  \n\t ", "**Conservare in frigo**"):
+            with self.subTest(notes=notes):
+                recipe = {**json.loads(ORIGINAL), "notes": notes}
+                self.github.files[KEY] = json.dumps(recipe).encode()
+                self.store.expires_at = 0
+                response = await self.api_client.get("/recipe/sample")
+                self.assertEqual(response.status_code, 200)
+                if notes and notes.strip():
+                    self.assertIn(">Note</p>", response.text)
+                    self.assertIn("<strong>Conservare in frigo</strong>", response.text)
+                else:
+                    self.assertNotIn(">Note</p>", response.text)
+
     async def test_ui_renders_versions_and_preserves_forms_on_failure(self):
         for url, expected in (
             ("/recipe/sample/edit", '"version": "' + blob_sha(ORIGINAL)),

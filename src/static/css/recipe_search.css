@@ -1,0 +1,53 @@
+.recipe-search {
+  /* Match the two px-5 wrappers around recipe names (2 × 1.25rem). */
+  margin-inline: 2.5rem;
+}
+
+.recipe-search-empty {
+  margin-inline: 2.5rem;
+  padding-top: 2rem;
+}
+
+.recipe-search-field {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #a8a29e;
+}
+
+.recipe-search-field:focus-within {
+  border-color: #292524;
+  box-shadow: 0 1px 0 #292524;
+}
+
+.recipe-search-input {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.6rem 0;
+  font: inherit;
+  outline: none;
+}
+
+.recipe-search-input::placeholder {
+  color: #78716c;
+  opacity: 1;
+}
+
+.recipe-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.recipe-search-clear {
+  padding: 0.25rem 0.5rem;
+  color: #78716c;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.recipe-search-clear:focus-visible {
+  outline: 2px solid #292524;
+  outline-offset: 2px;
+}

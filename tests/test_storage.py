@@ -385,7 +385,7 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         self.assertLess(response.text.index("Cuocere"), response.text.index("<time"))
         self.assertLess(
             response.text.index("</time>"),
-            response.text.index('<div class="flex flex-row">'),
+            response.text.index('<div class="page-actions recipe-actions">'),
         )
         self.assertIn("01/11/2026", response.text)
         self.assertNotIn("Servizio ricette", response.text)

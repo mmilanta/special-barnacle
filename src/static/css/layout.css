@@ -1,0 +1,70 @@
+/* Paint the browser canvas too, including the area exposed by mobile overscroll. */
+html,
+body {
+  background-color: #fff7ed;
+}
+
+html {
+  overflow-wrap: anywhere;
+}
+
+body {
+  /* Keep child margins inside the page background. */
+  display: flow-root;
+}
+
+body,
+.min-h-screen {
+  min-height: 100vh;
+  /* Stay stable as mobile browser controls appear and disappear. */
+  min-height: 100svh;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.page-actions > * {
+  min-width: 0;
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+/* Wide Markdown content should scroll locally rather than widening the page. */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 639px) {
+  .recipe-actions > button,
+  .recipe-actions > a {
+    flex: 1 0 calc(50% - 0.375rem);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .recipe-actions > .account-name {
+    flex-basis: 100%;
+    padding-inline: 0;
+  }
+
+  .homepage-content [data-recipe-category] {
+    padding-inline: 0.5rem;
+  }
+
+  .homepage-content [data-recipe-category] > div > .container {
+    padding-inline: 1rem;
+  }
+
+  .homepage-content .recipe-search,
+  .homepage-content .recipe-search-empty {
+    /* Align search with the recipe links below it. */
+    margin-inline: 1.5rem;
+  }
+}

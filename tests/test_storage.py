@@ -6,6 +6,7 @@ import hashlib
 import json
 import sys
 import unittest
+from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
@@ -363,6 +364,64 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(result.status_code, 503)
         self.assertEqual(self.github.files[KEY], ORIGINAL)
+
+    async def test_recipe_analytics_distinguishes_recipes_and_ignores_query_strings(self):
+        class AnalyticsParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.trackers = []
+                self.title = ""
+                self.in_title = False
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == "script" and "data-goatcounter" in attrs:
+                    self.trackers.append(attrs)
+                if tag == "title":
+                    self.in_title = True
+
+            def handle_endtag(self, tag):
+                if tag == "title":
+                    self.in_title = False
+
+            def handle_data(self, data):
+                if self.in_title:
+                    self.title += data
+
+        other_title = 'Biscotti & crema "Aua"'
+        self.github.files["recipe:other.json"] = json.dumps(
+            {**json.loads(ORIGINAL), "title": other_title}
+        ).encode()
+        for path, analytics_path, title in (
+            ("/", "ricettenonnaaua.com/", "Ricette Nonna Aua"),
+            ("/recipe/sample", "ricettenonnaaua.com/recipe/sample", "Torta"),
+            ("/recipe/sample?source=shared", "ricettenonnaaua.com/recipe/sample", "Torta"),
+            ("/recipe/other", "ricettenonnaaua.com/recipe/other", other_title),
+        ):
+            with self.subTest(path=path):
+                response = await self.api_client.get(path)
+                self.assertEqual(response.status_code, 200)
+                parser = AnalyticsParser()
+                parser.feed(response.text)
+                self.assertEqual(len(parser.trackers), 1)
+                tracker = parser.trackers[0]
+                self.assertEqual(tracker["data-goatcounter"], "https://mmilanta.goatcounter.com/count")
+                self.assertEqual(tracker["src"], "https://gc.zgo.at/count.js")
+                self.assertIn("async", tracker)
+                self.assertEqual(json.loads(tracker["data-goatcounter-settings"]), {"path": analytics_path})
+                self.assertEqual(parser.title, title)
+
+    async def test_analytics_excludes_missing_recipes_and_private_editing_pages(self):
+        missing = await self.api_client.get("/recipe/missing")
+        self.assertEqual(missing.status_code, 404)
+        self.assertNotIn("data-goatcounter", missing.text)
+        self.auth({"is_superuser": True})
+        sha = self.github.histories[KEY][0]["sha"]
+        for path in ("/recipe/sample/edit", "/recipe/sample/history", f"/recipe/sample/history/{sha}"):
+            with self.subTest(path=path):
+                response = await self.api_client.get(path)
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("data-goatcounter", response.text)
 
     async def test_notes_section_only_appears_with_content(self):
         for notes in (None, "", "  \n\t ", "**Conservare in frigo**"):

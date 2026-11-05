@@ -119,6 +119,22 @@ cd src/tailwindcss
 npx tailwindcss -i ./styles/app.css -o ../static/css/app.css --watch
 ```
 
+## Visitor statistics
+
+The homepage and public recipe pages report pageviews to the shared
+[GoatCounter dashboard](https://mmilanta.goatcounter.com). Filter paths by
+`ricettenonnaaua.com/recipe/` to see individual recipes, with their recipe names
+as page titles. Each recipe is keyed by its stable ID, so renaming one does not
+split its statistics. The homepage is `ricettenonnaaua.com/`; the domain prefix
+keeps it separate from the other sites sharing this dashboard. Query strings
+are omitted so different links to one recipe count toward the same page.
+
+These are views of recipe pages, not clicks on the recipe list. Editing,
+history, authentication, and error pages do not load the tracker. No account
+names, emails, or recipe contents are sent as analytics fields. Counts begin
+after deployment and can miss visits when analytics is blocked. GoatCounter's
+default session deduplication applies; repeated reloads are not separate visits.
+
 ## Typography
 
 Libre Baskerville is served locally in regular and italic variable WOFF2 files,
